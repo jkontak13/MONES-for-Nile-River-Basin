@@ -1,6 +1,6 @@
 from core.models.facility import ControlledFacility
 
-class IrrigationSystem(ControlledFacility):
+class Dam(ControlledFacility):
     def determine_reward(self) -> float:
         if self.stored_water > self.max_capacity:
             return float('-inf')
