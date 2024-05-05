@@ -9,7 +9,8 @@ class Dam(ControlledFacility):
         else:
             return 0.0
 
-    def determine_outflow(self, action) -> float:
+    def determine_outflow(self, action: float) -> float:
+        # TODO: Determine correct action type.
         return self.inflow * action
 
     def determine_info(self) -> str:
