@@ -99,12 +99,7 @@ class PowerPlant(Facility):
         # Calculate power in mW, has to be lower than or equal to capacity
         power_in_mw = min(
             self.max_capacity,
-            turbine_flow
-            * head
-            * m3_to_kg_factor
-            * g
-            * self.efficiency
-            * w_mw_conversion,
+            turbine_flow * head * m3_to_kg_factor * g * self.efficiency * w_mw_conversion,
         )
 
         # Hydro-energy power production in mWh
