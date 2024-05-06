@@ -1,5 +1,9 @@
 from core.models.facility import Facility
 import numpy as np
+import os
+
+dir_path = os.path.abspath(os.path.dirname(os.path.realpath(__file__)))
+data_directory = os.path.join(dir_path, "../data/")
 
 """
 Class to represent Irrigation System
@@ -29,12 +33,13 @@ determine_info():
 
 class IrrigationSystem(Facility):
 
-    def __init__(self, id: str, name: str, demand: float = 0.0) -> None:
+    def __init__(self, id: str, name: str) -> None:
         super().__init__(id)
         self.name = name
-        self.demand = demand
+        fh = os.path.join(data_directory, f"irr_demand_{name}.txt")
+        self.demand = np.loadtxt(fh)
         self.deficit = 0
-        self.months = 0
+        self.months: int = 0
 
     """
         Calculates the reward (irrigation deficit) given the values of its attributes 
@@ -47,7 +52,7 @@ class IrrigationSystem(Facility):
 
     def determine_reward(self) -> float:
         consumption = self.determine_consumption()
-        deficit = consumption - self.demand
+        deficit = consumption - self.demand[self.months]
         self.deficit += deficit
         self.months += 1
         return deficit
@@ -62,7 +67,7 @@ class IrrigationSystem(Facility):
             """
 
     def determine_consumption(self) -> float:
-        return min(self.demand, self.inflow-self.outflow)
+        return min(self.demand[self.months], self.inflow-self.outflow)
 
     """
         Determines info of irrigation system
