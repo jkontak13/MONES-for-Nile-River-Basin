@@ -1,18 +1,58 @@
 from core.models.facility import Facility
+import numpy as np
+
+"""
+Class to represent Irrigation System
+
+Attributes:
+----------
+id : str
+    identifier
+name : str
+    Name of the Irrigation System
+demand : float
+    The demand of the irrigation system
+deficit : float
+   The total amount of water deficit we have 
+
+
+Methods:
+----------
+determine_reward():
+    Calculates the reward (irrigation deficit) given the values of its attributes 
+determine_consumption():
+    Determines how much water is consumed by the irrigation system
+determine_info():
+    Returns info about the irrigation sustem
+"""
 
 
 class IrrigationSystem(Facility):
 
-    def __init__(self, id: str, water_usage: float) -> None:
+    def __init__(self, id: str, name: str, demand: float = 0.0) -> None:
         super().__init__(id)
-        self.water_usage: float = water_usage
+        self.name = name
+        self.demand = demand
+        self.deficit = 0
+        self.months = 0
 
     def determine_reward(self) -> float:
-        return (self.outflow - self.inflow) / self.water_usage
+        consumption = self.determine_consumption()
+        deficit = consumption - self.demand
+        self.deficit += deficit
+        self.months += 1
+        return deficit
 
     def determine_consumption(self) -> float:
-        return min(self.water_usage, self.inflow)
+        return min(self.demand, self.inflow-self.outflow)
 
-    def determine_info(self) -> str:
-        # TODO: Determine info for Irrigation System.
-        return ""
+    def determine_info(self) -> dict:
+        return {
+            "id": self.id,
+            "name": self.name,
+            "inflow": self.inflow,
+            "outflow": self.outflow,
+            "demand": self.demand,
+            "months": self.months,
+            "deficit": self.deficit,
+        }
