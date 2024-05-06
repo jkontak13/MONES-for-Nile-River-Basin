@@ -15,9 +15,11 @@ id : str
 name : str
     Name of the Irrigation System
 demand : float
-    The demand of the irrigation system
-deficit : float
+    The monthly demand of the irrigation system 
+total_deficit : float
    The total amount of water deficit we have 
+list_deficits : list[float]
+   The monthly list of the deficit of the irrigation system 
 
 
 Methods:
@@ -38,8 +40,9 @@ class IrrigationSystem(Facility):
         self.name = name
         fh = os.path.join(data_directory, f"irr_demand_{name}.txt")
         self.demand = np.loadtxt(fh)
-        self.deficit = 0
+        self.total_deficit = 0
         self.months: int = 0
+        self.list_deficits: list[float] = []
 
     """
         Calculates the reward (irrigation deficit) given the values of its attributes 
@@ -53,8 +56,9 @@ class IrrigationSystem(Facility):
     def determine_reward(self) -> float:
         consumption = self.determine_consumption()
         deficit = consumption - self.demand[self.months]
-        self.deficit += deficit
+        self.total_deficit += deficit
         self.months += 1
+        self.list_deficits.append(deficit)
         return deficit
 
     """
