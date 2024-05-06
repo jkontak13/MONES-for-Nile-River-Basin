@@ -3,7 +3,7 @@ from core.models.facility import Facility
 
 class IrrigationSystem(Facility):
 
-    def __init__(self, id: str, float, water_usage: float) -> None:
+    def __init__(self, id: str, water_usage: float) -> None:
         super().__init__(id)
         self.water_usage: float = water_usage
 
