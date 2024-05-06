@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from gymnasium.spaces import Space, Box
 from gymnasium.core import ObsType
-from typing import SupportsFloat
+from typing import SupportsFloat, tuple
 
 
 class Facility(ABC):
@@ -19,7 +19,7 @@ class Facility(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def determine_info(self) -> str:
+    def determine_info(self) -> dict:
         raise NotImplementedError()
 
     def step(self) -> tuple[ObsType, float, bool, bool, dict]:
@@ -32,7 +32,12 @@ class Facility(ABC):
 
 class ControlledFacility(ABC):
     def __init__(
-        self, id: str, observation_space: Space, action_space: Box, max_capacity: float, stored_water: float
+        self,
+        id: str,
+        observation_space: Space,
+        action_space: Box,
+        max_capacity: float,
+        stored_water: float,
     ) -> None:
         self.id: str = id
         self.inflow: float = 0
@@ -53,7 +58,7 @@ class ControlledFacility(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def determine_info(self) -> str:
+    def determine_info(self) -> dict:
         raise NotImplementedError()
 
     @abstractmethod
@@ -69,4 +74,10 @@ class ControlledFacility(ABC):
         # TODO: Change stored_water to multiple outflows.
         self.stored_water += self.inflow - self.outflow
 
-        return self.determine_observation(), self.determine_reward(), self.is_terminated(), False, self.determine_info()
+        return (
+            self.determine_observation(),
+            self.determine_reward(),
+            self.is_terminated(),
+            False,
+            self.determine_info(),
+        )
