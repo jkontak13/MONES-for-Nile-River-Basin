@@ -1,0 +1,11 @@
+image: python:3.9.17
+
+stages:
+   - lint
+
+lint-job:
+    stage: lint
+    script:
+        - pip3 install black
+        - black -l 120 bunq/ --check
+    allow_failure: false
