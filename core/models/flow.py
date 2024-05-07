@@ -1,5 +1,5 @@
 from core.models.facility import Facility, ControlledFacility
-from typing import Optional, Union
+from typing import Optional, List, Union
 from gymnasium.core import ObsType
 from typing import SupportsFloat
 
@@ -8,17 +8,17 @@ class Flow:
     def __init__(
         self,
         id: str,
-        source: Optional[Union[Facility, ControlledFacility]],
+        sources: List[Union[Facility, ControlledFacility]],
         destination: Optional[Union[Facility, ControlledFacility]],
         max_capacity: float,
     ) -> None:
         self.id: str = id
-        self.source: Union[Facility, ControlledFacility] = source
+        self.sources: List[Union[Facility, ControlledFacility]] = sources
         self.destination: Union[Facility, ControlledFacility] = destination
         self.max_capacity: float = max_capacity
 
     def determine_source_outflow(self) -> float:
-        return self.source.outflow
+        return sum(source.outflow for source in self.sources)
 
     def set_destination_inflow(self) -> None:
         self.destination.inflow = self.determine_source_outflow()
@@ -48,8 +48,8 @@ class Inflow(Flow):
 
 
 class Outflow(Flow):
-    def __init__(self, id: str, source: Union[Facility, ControlledFacility], max_capacity: float) -> None:
-        super().__init__(id, source, None, max_capacity)
+    def __init__(self, id: str, sources: List[Union[Facility, ControlledFacility]], max_capacity: float) -> None:
+        super().__init__(id, sources, None, max_capacity)
 
     def set_destination_inflow(self) -> None:
         pass
