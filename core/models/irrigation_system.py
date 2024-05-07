@@ -33,7 +33,7 @@ determine_info():
 
 class IrrigationSystem(Facility):
 
-    def __init__(self, id: str, demand: list[float] = None) -> None:
+    def __init__(self, id: str, demand: list[float]) -> None:
         super().__init__(id)
         self.demand = demand if demand is not None else []
         self.total_deficit = 0
