@@ -71,7 +71,7 @@ class IrrigationSystem(Facility):
             """
 
     def determine_consumption(self) -> float:
-        return min(self.demand[self.months], self.inflow-self.outflow)
+        return min(self.demand[self.months], self.inflow)
 
     """
         Determines info of irrigation system
@@ -90,5 +90,7 @@ class IrrigationSystem(Facility):
             "outflow": self.outflow,
             "demand": self.demand,
             "months": self.months,
-            "deficit": self.deficit,
+            "total_deficit": self.total_deficit,
+            "list_deficits": self.list_deficits,
+
         }
