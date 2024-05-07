@@ -35,7 +35,7 @@ class IrrigationSystem(Facility):
 
     def __init__(self, id: str, demand: list[float]) -> None:
         super().__init__(id)
-        self.demand = demand if demand is not None else []
+        self.demand = demand
         self.total_deficit = 0
         self.months: int = 0
         self.list_deficits: list[float] = []
