@@ -12,10 +12,8 @@ Attributes:
 ----------
 id : str
     identifier
-name : str
-    Name of the Irrigation System
 demand : float
-    The monthly demand of the irrigation system 
+   The list of monthly demand of the irrigation system 
 total_deficit : float
    The total amount of water deficit we have 
 list_deficits : list[float]
@@ -35,11 +33,9 @@ determine_info():
 
 class IrrigationSystem(Facility):
 
-    def __init__(self, id: str, name: str) -> None:
+    def __init__(self, id: str, demand: list[float] = None) -> None:
         super().__init__(id)
-        self.name = name
-        fh = os.path.join(data_directory, f"irr_demand_{name}.txt")
-        self.demand = np.loadtxt(fh)
+        self.demand = demand if demand is not None else []
         self.total_deficit = 0
         self.months: int = 0
         self.list_deficits: list[float] = []
@@ -55,7 +51,7 @@ class IrrigationSystem(Facility):
 
     def determine_reward(self) -> float:
         consumption = self.determine_consumption()
-        deficit = consumption - self.demand[self.months]
+        deficit = self.demand[self.months] - consumption
         self.total_deficit += deficit
         self.months += 1
         self.list_deficits.append(deficit)
@@ -85,7 +81,6 @@ class IrrigationSystem(Facility):
     def determine_info(self) -> dict:
         return {
             "id": self.id,
-            "name": self.name,
             "inflow": self.inflow,
             "outflow": self.outflow,
             "demand": self.demand,
