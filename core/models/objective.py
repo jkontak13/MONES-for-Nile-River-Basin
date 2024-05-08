@@ -2,6 +2,10 @@ class Objective:
     MINIMUM_WATER_LEVEL = 159
 
     @staticmethod
+    def no_objective(*args):
+        return 0.0
+
+    @staticmethod
     def identity(value: float) -> float:
         return value
 
@@ -10,5 +14,5 @@ class Objective:
         return 0.0 if water_level < Objective.MINIMUM_WATER_LEVEL else 1.0
 
     @staticmethod
-    def water_deficit(demand: float, received: float) -> float:
-        return max(0.0, demand - received)
+    def water_deficit_minimised(demand: float, received: float) -> float:
+        return - max(0.0, demand - received)

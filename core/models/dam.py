@@ -21,7 +21,7 @@ class Dam(ControlledFacility):
 
     def determine_info(self) -> str:
         # TODO: Determine info for Dam.
-        return ""
+        return {}
 
     def determine_observation(self) -> float:
         # TODO: Determine observation.

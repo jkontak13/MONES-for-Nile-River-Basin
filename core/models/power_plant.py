@@ -45,6 +45,8 @@ class PowerPlant(Facility):
         head_start_level: float,
         max_capacity: float,
         water_level_coeff: float,
+        objective_function,
+        objective_name: str,
         # TODO: find out if operating hours for power plants differ
         operating_hours: float = 24 * 30,
         # TODO: determine actual water usage for power plants, 0.0 for ease now
@@ -56,6 +58,8 @@ class PowerPlant(Facility):
         self.head_start_level = head_start_level
         self.max_capacity = max_capacity
         self.water_level_coeff = water_level_coeff
+        self.objective_function = objective_function
+        self.objective_name = objective_name
         self.operating_hours = operating_hours
         self.water_usage = water_usage
         # Create value to track number of months and total production, can be used to track yearly or montly averages
@@ -63,8 +67,7 @@ class PowerPlant(Facility):
         self.production_sum = 0
 
     """
-    Calculates the reward for a power plant.
-    Currently only calculates power production in MWh
+    Calculates power production in MWh.
 
     Parameters:
     ----------
@@ -82,7 +85,7 @@ class PowerPlant(Facility):
     """
 
     # Constants are configured as parameters with default values
-    def determine_reward(
+    def determine_production(
         self,
         m3_to_kg_factor: int = 1000,
         w_mw_conversion: float = 1e-6,
@@ -94,7 +97,7 @@ class PowerPlant(Facility):
         # Uses water level coeff to calculate at what level the outflow will flow
         water_level = self.outflow * self.water_level_coeff
         # Calculate at what level the head will generate power, using water_level of the outflow and head_start_level
-        head = max(0, water_level - self.head_start_level)
+        head = max(0.0, water_level - self.head_start_level)
 
         # Calculate power in mW, has to be lower than or equal to capacity
         power_in_mw = min(
@@ -112,6 +115,22 @@ class PowerPlant(Facility):
         self.production_sum += production
 
         return production
+
+    """
+    Determines reward for the power plant using the power production.
+    
+    Parameters:
+    ----------
+    objective_function : (float) -> float
+        Function calculating the objective given the power production.
+
+    Returns:
+    ----------
+    float
+        Reward.
+    """
+    def determine_reward(self) -> float:
+        return self.objective_function(self.determine_production())
 
     """
     Determines water consumption.
