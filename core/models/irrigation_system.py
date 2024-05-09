@@ -41,13 +41,13 @@ class IrrigationSystem(Facility):
         self.list_deficits: list[float] = []
 
     """
-        Calculates the reward (irrigation deficit) given the values of its attributes 
+    Calculates the reward (irrigation deficit) given the values of its attributes 
 
-        Returns:
-        ----------
-        float
-            Water deficit of the irrigation system
-        """
+    Returns:
+    ----------
+    float
+        Water deficit of the irrigation system
+    """
 
     def determine_reward(self) -> float:
         consumption = self.determine_consumption()
@@ -58,25 +58,25 @@ class IrrigationSystem(Facility):
         return deficit
 
     """
-        Determines how much water is consumed by the irrigation system
+    Determines how much water is consumed by the irrigation system
 
-            Returns:
-            ----------
-            float
-                Water consumption
-            """
+    Returns:
+    ----------
+    float
+        Water consumption
+    """
 
     def determine_consumption(self) -> float:
         return min(self.demand[self.months], self.inflow)
 
     """
-        Determines info of irrigation system
+    Determines info of irrigation system
 
-        Returns:
-        ----------
-        dict
-            Info about irrigation system (id, name, inflow, outflow, demand, months, deficit)
-        """
+    Returns:
+    ----------
+    dict
+        Info about irrigation system (id, name, inflow, outflow, demand, months, deficit)
+    """
 
     def determine_info(self) -> dict:
         return {
@@ -87,5 +87,4 @@ class IrrigationSystem(Facility):
             "months": self.months,
             "total_deficit": self.total_deficit,
             "list_deficits": self.list_deficits,
-
         }

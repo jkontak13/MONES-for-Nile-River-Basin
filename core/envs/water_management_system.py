@@ -19,9 +19,9 @@ class WaterManagementSystem(gym.Env):
     def _determine_observation_space(self) -> Dict:
         return Dict(
             {
-                water_systems.id: water_systems.observation_space
-                for water_systems in self.water_systems
-                if isinstance(water_systems, ControlledFacility)
+                water_system.id: water_system.observation_space
+                for water_system in self.water_systems
+                if isinstance(water_system, ControlledFacility)
             },
             self.seed,
         )
@@ -29,9 +29,9 @@ class WaterManagementSystem(gym.Env):
     def _determine_action_space(self) -> Dict:
         return Dict(
             {
-                water_systems.id: water_systems.action_space
-                for water_systems in self.water_systems
-                if isinstance(water_systems, ControlledFacility)
+                water_system.id: water_system.action_space
+                for water_system in self.water_systems
+                if isinstance(water_system, ControlledFacility)
             },
             self.seed,
         )
@@ -44,8 +44,10 @@ class WaterManagementSystem(gym.Env):
         # We need the following line to seed self.np_random.
         super().reset(seed=seed)
 
+        # TODO: Figure out the reset in facility
         for water_system in self.water_systems:
             water_system.reset()
+
 
         return self._determine_observation_space(), self._determine_info()
 
@@ -73,6 +75,8 @@ class WaterManagementSystem(gym.Env):
             final_truncated = final_truncated or truncated
             final_info[water_systems.id] = info
 
+        # TODO: Flatten final_observation and create numpy array out of it
+        # TODO: Make the final_reward an array instead of a single number
         return final_observation, final_reward, final_terminated, final_truncated, final_info
 
     def close(self) -> None:
