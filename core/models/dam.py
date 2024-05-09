@@ -1,15 +1,13 @@
 from typing import Tuple
-
+from pathlib import Path
 from core.models.facility import ControlledFacility
 from gymnasium.spaces import Box, Space
 import numpy as np
 from numpy.core.multiarray import interp as compiled_interp
-import os
 from array import array
 from bisect import bisect_right
 
-dir_path = os.path.abspath(os.path.dirname(os.path.realpath(__file__)))
-data_directory = os.path.join(dir_path, "../data/")
+data_directory = Path(__file__).parents[1] / "data"
 
 
 class Dam(ControlledFacility):
@@ -69,17 +67,10 @@ class Dam(ControlledFacility):
         super().__init__(id, observation_space, action_space, max_capacity)
         self.stored_water: float = stored_water
 
-        fh = os.path.join(data_directory, f"evap_{id}.txt")
-        self.evap_rates = np.loadtxt(fh)
-
-        fh = os.path.join(data_directory, f"store_min_max_release_{id}.txt")
-        self.storage_to_minmax_rel = np.loadtxt(fh)
-
-        fh = os.path.join(data_directory, f"store_level_rel_{id}.txt")
-        self.storage_to_level_rel = np.loadtxt(fh)
-
-        fh = os.path.join(data_directory, f"store_sur_rel_{id}.txt")
-        self.storage_to_surface_rel = np.loadtxt(fh)
+        self.evap_rates = np.loadtxt(data_directory / f"evap_{id}.txt")
+        self.storage_to_minmax_rel = np.loadtxt(data_directory / f"store_min_max_release_{id}.txt")
+        self.storage_to_level_rel = np.loadtxt(data_directory / f"store_level_rel_{id}.txt")
+        self.storage_to_surface_rel = np.loadtxt(data_directory / f"store_sur_rel_{id}.txt")
 
         self.storage_vector = array("f", [])
         self.level_vector = array("f", [])

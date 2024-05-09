@@ -1,8 +1,8 @@
 import numpy as np
 import gymnasium as gym
 from gymnasium.spaces import Space, Dict
-from gymnasium.core import Optional, ObsType
-from typing import Any, List, Union, SupportsFloat
+from gymnasium.core import ObsType
+from typing import Any, List, Union, Optional, SupportsFloat
 from core.models.flow import Flow
 from core.models.facility import Facility, ControlledFacility
 
@@ -37,7 +37,7 @@ class WaterManagementSystem(gym.Env):
 
     def _determine_info(self) -> dict[str, Any]:
         # TODO: decide on what we wnat to output in the info.
-        return {"facilites": self.water_systems}
+        return {"water_systems": self.water_systems}
 
     def reset(self, seed: Optional[int] = None, options: Optional[dict] = None) -> tuple[ObsType, dict[str, Any]]:
         # We need the following line to seed self.np_random.

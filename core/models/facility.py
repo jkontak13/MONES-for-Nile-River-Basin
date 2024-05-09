@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from gymnasium.spaces import Space, Box
+from gymnasium.spaces import Space
 from gymnasium.core import ObsType, ActType
 from typing import SupportsFloat, Tuple
 
@@ -22,7 +22,7 @@ class Facility(ABC):
     def determine_info(self) -> dict:
         raise NotImplementedError()
 
-    def step(self) -> tuple[ObsType, float, bool, bool, dict]:
+    def step(self) -> Tuple[ObsType, float, bool, bool, dict]:
         self.outflow = self.inflow - self.determine_consumption()
         # TODO: Determine if we need to satisy any terminating codnitions for facility.
         terminated = False
@@ -31,7 +31,9 @@ class Facility(ABC):
 
 
 class ControlledFacility(ABC):
-    def __init__(self, id: str, observation_space: Space, action_space: ActType, max_capacity: float = float("Inf")) -> None:
+    def __init__(
+        self, id: str, observation_space: Space, action_space: ActType, max_capacity: float = float("Inf")
+    ) -> None:
         self.id: str = id
         self.inflow: float = 0
         self.outflow: float = 0
@@ -61,7 +63,7 @@ class ControlledFacility(ABC):
     def is_terminated(self) -> bool:
         raise NotImplementedError()
 
-    def step(self, action: ActType) -> tuple[ObsType, SupportsFloat, bool, bool, dict]:
+    def step(self, action: ActType) -> Tuple[ObsType, SupportsFloat, bool, bool, dict]:
         self.outflow = self.determine_outflow(action)
         # TODO: Change stored_water to multiple outflows.
 
