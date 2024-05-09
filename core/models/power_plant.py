@@ -1,3 +1,7 @@
+from typing import Tuple
+
+from gymnasium.core import ObsType
+
 from core.models.facility import Facility
 
 """
@@ -111,7 +115,6 @@ class PowerPlant(Facility):
         # TODO: change function for hydro-energy power production to be an actual reward
         #       (adapt it to the specific objective such as minimising months below minimum power production)
         #       possibly use months and production_sum attributes to calculate monthly or yearly averages
-        self.months += 1
         self.production_sum += production
 
         return production
@@ -129,6 +132,7 @@ class PowerPlant(Facility):
     float
         Reward.
     """
+
     def determine_reward(self) -> float:
         return self.objective_function(self.determine_production())
 
@@ -162,3 +166,9 @@ class PowerPlant(Facility):
             "months": self.months,
             "total production (MWh)": self.production_sum,
         }
+
+    def step(self) -> Tuple[ObsType, float, bool, bool, dict]:
+        reward = self.determine_reward()
+        info = self.determine_info()
+        self.months += 1
+        return None, reward, False, False, info

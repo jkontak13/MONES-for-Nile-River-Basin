@@ -15,4 +15,4 @@ class Objective:
 
     @staticmethod
     def water_deficit_minimised(demand: float, received: float) -> float:
-        return - max(0.0, demand - received)
+        return -max(0.0, demand - received)

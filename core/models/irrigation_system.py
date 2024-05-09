@@ -1,10 +1,7 @@
 from typing import Tuple
 from gymnasium.core import ObsType
 from core.models.facility import Facility
-import os
 
-dir_path = os.path.abspath(os.path.dirname(os.path.realpath(__file__)))
-data_directory = os.path.join(dir_path, "../data/")
 
 """
 Class to represent Irrigation System

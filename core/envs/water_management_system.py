@@ -3,6 +3,10 @@ import gymnasium as gym
 from gymnasium.spaces import Space, Dict
 from gymnasium.core import ObsType
 from typing import Any, List, Union, SupportsFloat, Optional
+from gymnasium.core import ObsType
+from typing import Any, List, Union, Optional, SupportsFloat
+from gymnasium.core import ObsType, RenderFrame
+from typing import Any, List, Union, SupportsFloat, Optional, Tuple
 from core.models.flow import Flow
 from core.models.facility import Facility, ControlledFacility
 
@@ -45,35 +49,34 @@ class WaterManagementSystem(gym.Env):
         super().reset(seed=seed)
 
         # TODO: Figure out the reset in facility
-        for water_system in self.water_systems:
-            water_system.reset()
-
+        # for water_system in self.water_systems:
+        #     water_system.reset()
 
         return self._determine_observation_space(), self._determine_info()
 
-    def step(self, action: Dict) -> tuple[ObsType, SupportsFloat, bool, bool, dict]:
+    def step(self, action: Dict) -> Tuple[ObsType, SupportsFloat, bool, bool, dict]:
 
         final_observation = {}
-        final_reward = 0
+        final_reward = self.rewards
         final_terminated = False
         final_truncated = False
         final_info = {}
 
-        for water_systems in self.water_systems:
-            if isinstance(water_systems, ControlledFacility):
-                observation, reward, terminated, truncated, info = water_systems.step(action[water_systems.id])
-            elif isinstance(water_systems, Facility) or isinstance(water_systems, Flow):
-                observation, reward, terminated, truncated, info = water_systems.step()
+        for water_system in self.water_systems:
+            if isinstance(water_system, ControlledFacility):
+                observation, reward, terminated, truncated, info = water_system.step(action[water_system.id])
+            elif isinstance(water_system, Facility) or isinstance(water_system, Flow):
+                observation, reward, terminated, truncated, info = water_system.step()
             else:
                 raise ValueError()
             # Get the reward
             # Check what function is assigned to the water_system, apply it
-
-            final_observation[water_systems.id] = observation
+            final_reward[water_system.objective_name] += reward
+            final_observation[water_system.id] = observation
             final_reward += reward
             final_terminated = final_terminated or terminated
             final_truncated = final_truncated or truncated
-            final_info[water_systems.id] = info
+            final_info[water_system.id] = info
 
         # TODO: Flatten final_observation and create numpy array out of it
         # TODO: Make the final_reward an array instead of a single number
@@ -81,4 +84,8 @@ class WaterManagementSystem(gym.Env):
 
     def close(self) -> None:
         # TODO: implement if needed, e.g. for closing opened rendering frames.
+        pass
+
+    def render(self) -> RenderFrame | list[RenderFrame] | None:
+        # TODO: implement if needed, for rendering simulation.
         pass
