@@ -1,21 +1,15 @@
+from typing import Tuple
+
 from core.models.facility import ControlledFacility
 from gymnasium.spaces import Box, Space
 import numpy as np
 from numpy.core.multiarray import interp as compiled_interp
 import os
-from scipy.constants import g
 from array import array
 from bisect import bisect_right
 
 dir_path = os.path.abspath(os.path.dirname(os.path.realpath(__file__)))
 data_directory = os.path.join(dir_path, "../data/")
-
-
-def modified_interp(x, xp, fp, left=None, right=None):
-    fp = np.asarray(fp)
-
-    interp_func = compiled_interp
-    return interp_func(x, xp, fp, left, right)
 
 
 class Dam(ControlledFacility):
@@ -38,11 +32,6 @@ class Dam(ControlledFacility):
         m3/s
         A vector that holds the actual average release per month
         from the reservoir throughout the simulation horizon
-    hydropower_plant : HydropowerPlant
-        A hydropower plant object belonging to the reservoir
-    hydroenergy_produced: np.array (1xH)
-        MWh
-        Amount of hydroenergy produced in each month
     evap_rates: np.array (1x12)
         cm
         Monthly evaporation rates of the reservoir
@@ -57,9 +46,10 @@ class Dam(ControlledFacility):
         Returns the volume based on level(height).
     level_to_surface(h=float)
         Returns the surface area based on level.
-    integration(total_seconds: int,
-        policy_release_decision: float,
-        net_secondly_inflow: float,
+    integration(
+        total_seconds: int,
+        release_action: float,
+        net_inflow_per_second: float,
         current_month: int,
         integ_step: int,
         )
@@ -71,9 +61,9 @@ class Dam(ControlledFacility):
         id: str,
         observation_space: Space,
         action_space: Box,
-        max_capacity: float,
         objective_function,
         objective_name: str = "",
+        max_capacity: float = float("Inf"),
         stored_water: float = 0,
     ) -> None:
         super().__init__(id, observation_space, action_space, max_capacity)
@@ -95,9 +85,6 @@ class Dam(ControlledFacility):
         self.level_vector = array("f", [])
         self.inflow_vector = array("f", [])
         self.release_vector = array("f", [])
-        self.hydropower_plant = None
-        self.hydroenergy_produced = array("f", [])
-        # self.total_evap = np.empty(0)
 
         # Initialise storage vector
         self.storage_vector.append(stored_water)
@@ -153,9 +140,7 @@ class Dam(ControlledFacility):
             "stored_water": self.stored_water,
             "current_level": self.level_vector[-1] if self.level_vector else None,
             "current_release": self.release_vector[-1] if self.release_vector else None,
-            "current_hydroenergy_produced": self.hydroenergy_produced[-1] if self.hydroenergy_produced else None,
             "evaporation_rates": self.evap_rates.tolist(),
-            "max_capacity": self.max_capacity,
         }
         return info
 
@@ -173,13 +158,13 @@ class Dam(ControlledFacility):
 
         return self.determine_observation(), self.determine_reward(), self.is_terminated(), False, self.determine_info()
 
-    def storage_to_level(self, s: float):
-        return modified_interp(s, self.storage_to_level_rel[0], self.storage_to_level_rel[1])
+    def storage_to_level(self, s: float) -> float:
+        return self.modified_interp(s, self.storage_to_level_rel[0], self.storage_to_level_rel[1])
 
-    def storage_to_surface(self, s: float):
-        return modified_interp(s, self.storage_to_surface_rel[0], self.storage_to_surface_rel[1])
+    def storage_to_surface(self, s: float) -> float:
+        return self.modified_interp(s, self.storage_to_surface_rel[0], self.storage_to_surface_rel[1])
 
-    def storage_to_minmax(self, s: float):
+    def storage_to_minmax(self, s: float) -> Tuple[float, float]:
         # For minimum release constraint, we regard the data points as a step function
         # such that once a given storage/elevation is surpassed, we have to release a
         # certain given amount. For maximum, we use interpolation as detailed discharge
@@ -187,15 +172,15 @@ class Dam(ControlledFacility):
 
         minimum_index = max(bisect_right(self.storage_to_minmax_rel[0], s), 1)
         minimum_cons = self.storage_to_minmax_rel[1][minimum_index - 1]
-        maximum_cons = modified_interp(s, self.storage_to_minmax_rel[0], self.storage_to_minmax_rel[2])
+        maximum_cons = self.modified_interp(s, self.storage_to_minmax_rel[0], self.storage_to_minmax_rel[2])
 
         return minimum_cons, maximum_cons
 
     def integration(
         self,
         total_seconds: int,
-        policy_release_decision: float,
-        net_secondly_inflow: float,
+        release_action: float,
+        net_inflow_per_second: float,
         current_month: int,
         integ_step: int,
     ) -> float:
@@ -208,10 +193,10 @@ class Dam(ControlledFacility):
         ----------
         total_seconds: int
             Number of seconds in the timestep.
-        policy_release_decision: float
+        release_action: float
             How much m3/s of water should be released.
-        net_secondly_inflow: float
-            Total inflow to this Dam.
+        net_inflow_per_second: float
+            Total inflow to this Dam measured in m3/s.
         current_month: int
             Current month.
         integ_step: int
@@ -219,11 +204,11 @@ class Dam(ControlledFacility):
 
         Returns
         -------
-        avg_monthly_release
-
+        avg_monthly_release: float
+            Average monthly release given in m3.
         """
 
-        self.inflow_vector = np.append(self.inflow_vector, net_secondly_inflow)
+        self.inflow_vector = np.append(self.inflow_vector, net_inflow_per_second)
         current_storage = self.storage_vector[-1]
         in_month_releases = array("f", [])
         monthly_evap_total = 0
@@ -238,13 +223,13 @@ class Dam(ControlledFacility):
 
             min_possible_release, max_possible_release = self.storage_to_minmax(current_storage)
 
-            secondly_release = min(max_possible_release, max(min_possible_release, policy_release_decision))
+            release_per_second = min(max_possible_release, max(min_possible_release, release_action))
 
-            in_month_releases.append(secondly_release)
+            in_month_releases.append(release_per_second)
 
-            total_addition = net_secondly_inflow * integ_step
+            total_addition = net_inflow_per_second * integ_step
 
-            current_storage += total_addition - evaporation - secondly_release * integ_step
+            current_storage += total_addition - evaporation - release_per_second * integ_step
 
         # Update the amount of water in the Dam
         self.storage_vector.append(current_storage)
@@ -254,9 +239,13 @@ class Dam(ControlledFacility):
         avg_monthly_release = np.mean(in_month_releases)
         self.release_vector.append(avg_monthly_release)
 
-        # self.total_evap = np.append(self.total_evap, monthly_evap_total)
-
         # Record level based on storage for time t
         self.level_vector.append(self.storage_to_level(current_storage))
 
         return avg_monthly_release
+
+    @staticmethod
+    def modified_interp(x: float, xp: float, fp: float, left=None, right=None) -> float:
+        fp = np.asarray(fp)
+
+        return compiled_interp(x, xp, fp, left, right)
