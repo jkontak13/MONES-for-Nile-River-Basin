@@ -36,24 +36,44 @@ def example_kris():
 
 
 def example1():
-    power_plant = PowerPlant("power-plant", 1000, 1000, 500, 100000, 0, Objective.identity, "ethiopia_power")
-    dam = Dam("GERD", Space(), Box(0, 1000000), Objective.minimum_water_level, "min_HAD", stored_water=1000000000)
-    irrigation_system = IrrigationSystem("irrigation-system", [100, 50, 1000], Objective.water_deficit_minimised, "egypt_deficit")
+    # Create power plant, dam and irrigation system. Initialise with semi-random parameters.
+    # Set objective functions to identity for power plant, minimum_water_level for dam and water_deficit_minimised
+    # for irrigation system.
+    power_plant = PowerPlant("power-plant", 1000, 1000, 500, 100000, 1, Objective.identity, "ethiopia_power")
+    dam = Dam("GERD", Space(), Box(0, 1000), Objective.minimum_water_level, "min_HAD", stored_water=5100000000)
+    irrigation_system = IrrigationSystem(
+        "irrigation-system", [100, 50, 1000], Objective.water_deficit_minimised, "egypt_deficit"
+    )
 
-    power_plant_inflow = Inflow("inflow", power_plant, 1000, 1000)
-    power_plant_dam_flow = Flow("power-plant-dam-flow", [power_plant], dam, 1000)
+    # Create 'edges' between Facilities.
+    power_plant_inflow = Inflow("inflow", power_plant, 1000000, 1000000)
+    power_plant_dam_flow = Flow("power-plant-dam-flow", [power_plant], dam, 20000000)
     dam_irrigation_system_flow = Flow("dam_irrigation_system_flow", [dam], irrigation_system, 1000)
     irrigation_system_outflow = Outflow("outflow", [irrigation_system], 1000)
 
+    # Create water management system. Add Facilities in the topological order (in the list).
+    # Egypt deficit reward goes negative when there is a deficit. Otherwise is 0.
     water_management_system = WaterManagementSystem(
-        water_systems=[dam, dam_irrigation_system_flow, irrigation_system, irrigation_system_outflow],
+        water_systems=[
+            power_plant_inflow,
+            power_plant,
+            power_plant_dam_flow,
+            dam,
+            dam_irrigation_system_flow,
+            irrigation_system,
+            irrigation_system_outflow,
+        ],
         rewards={"ethiopia_power": 0, "egypt_deficit": 0, "min_HAD": 0},
         seed=2137,
     )
-    for t in range(2):
+
+    # Simulate for 3 timestamps (3 months).
+    for t in range(3):
         action = water_management_system.action_space.sample()
         print("Action:", action)
-        final_observation, final_reward, final_terminated, final_truncated, final_info = water_management_system.step(action)
+        final_observation, final_reward, final_terminated, final_truncated, final_info = water_management_system.step(
+            action
+        )
         print("Reward:", final_reward)
         pprint.pprint(final_info)
         print("Is finished:", final_truncated, final_terminated)

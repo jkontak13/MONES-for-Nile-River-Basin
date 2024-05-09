@@ -1,10 +1,5 @@
-import numpy as np
 import gymnasium as gym
 from gymnasium.spaces import Space, Dict
-from gymnasium.core import ObsType
-from typing import Any, List, Union, SupportsFloat, Optional
-from gymnasium.core import ObsType
-from typing import Any, List, Union, Optional, SupportsFloat
 from gymnasium.core import ObsType, RenderFrame
 from typing import Any, List, Union, SupportsFloat, Optional, Tuple
 from core.models.flow import Flow
@@ -81,7 +76,13 @@ class WaterManagementSystem(gym.Env):
             # Store additional information
             final_info[water_system.id] = info
 
-        return list(final_observation.values()), list(final_reward.values()), final_terminated, final_truncated, final_info
+        return (
+            list(final_observation.values()),
+            list(final_reward.values()),
+            final_terminated,
+            final_truncated,
+            final_info,
+        )
 
     def close(self) -> None:
         # TODO: implement if needed, e.g. for closing opened rendering frames.

@@ -1,7 +1,5 @@
 from typing import Tuple
-
 from gymnasium.core import ObsType
-
 from core.models.facility import Facility
 
 """
@@ -171,4 +169,7 @@ class PowerPlant(Facility):
         reward = self.determine_reward()
         info = self.determine_info()
         self.months += 1
+
+        # Make all the water go through the PowerPlant.
+        self.outflow = self.inflow
         return None, reward, False, False, info
