@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from gymnasium.spaces import Space, Box
-from gymnasium.core import ObsType
-from typing import SupportsFloat, tuple
+from gymnasium.core import ObsType, ActType
+from typing import SupportsFloat, Tuple
 
 
 class Facility(ABC):
