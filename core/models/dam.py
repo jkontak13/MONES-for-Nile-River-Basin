@@ -149,6 +149,7 @@ class Dam(ControlledFacility):
 
     def determine_info(self) -> dict:
         info = {
+            "id": self.id,
             "stored_water": self.stored_water,
             "current_level": self.level_vector[-1] if self.level_vector else None,
             "current_release": self.release_vector[-1] if self.release_vector else None,
@@ -165,12 +166,8 @@ class Dam(ControlledFacility):
         return self.stored_water > self.max_capacity or self.stored_water < 0
 
     def step(self, action: float) -> tuple[float, float, bool, bool, dict]:
-        # Determine outflow
+        # Determine outflow (determine_outflow->integration() updates the stored_water variable)
         self.outflow = self.determine_outflow(action)
-
-        # Update amount of water in the Dam
-        self.stored_water += self.inflow - self.outflow
-
         # Increase the month number by one
         self.months = (self.months + 1) % 12
 
@@ -249,14 +246,17 @@ class Dam(ControlledFacility):
 
             current_storage += total_addition - evaporation - secondly_release * integ_step
 
+        # Update the amount of water in the Dam
         self.storage_vector.append(current_storage)
+        self.stored_water = current_storage
 
+        # Calculate the ouflow of water
         avg_monthly_release = np.mean(in_month_releases)
         self.release_vector.append(avg_monthly_release)
 
         # self.total_evap = np.append(self.total_evap, monthly_evap_total)
 
-        # Record level  based on storage for time t:
+        # Record level based on storage for time t
         self.level_vector.append(self.storage_to_level(current_storage))
 
         return avg_monthly_release
