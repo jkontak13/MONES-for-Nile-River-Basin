@@ -8,7 +8,7 @@ from core.models.catchment import Catchment
 
 # The numbers below are random and do not reflect actual constants of the Nile River simulation
 power_plant = PowerPlant("power-plant", 0.8, 1000, 1000, 1000, 0.2)
-dam = Dam("dam", Box(0, 1000), Box(0, 1000), 1000)
+dam = Dam("GERD", Box(0, 1000), Box(0, 1000), 1000)
 irrigation_system = IrrigationSystem("irrigation-system", 500)
 catchment = Catchment("catchment", 1000)
 

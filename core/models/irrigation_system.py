@@ -1,9 +1,7 @@
 from core.models.facility import Facility
 import numpy as np
-import os
+from pathlib import Path
 
-dir_path = os.path.abspath(os.path.dirname(os.path.realpath(__file__)))
-data_directory = os.path.join(dir_path, "../data/")
 
 """
 Class to represent Irrigation System
