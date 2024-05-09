@@ -99,6 +99,9 @@ class Dam(ControlledFacility):
         self.hydroenergy_produced = array("f", [])
         # self.total_evap = np.empty(0)
 
+        # Initialise storage vector
+        self.storage_vector.append(stored_water)
+
         self.objective_function = objective_function
         self.objective_name = objective_name
 
