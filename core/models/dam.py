@@ -46,9 +46,10 @@ class Dam(ControlledFacility):
         Returns the volume based on level(height).
     level_to_surface(h=float)
         Returns the surface area based on level.
-    integration(total_seconds: int,
-        policy_release_decision: float,
-        net_secondly_inflow: float,
+    integration(
+        total_seconds: int,
+        release_action: float,
+        net_inflow_per_second: float,
         current_month: int,
         integ_step: int,
         )
@@ -179,7 +180,7 @@ class Dam(ControlledFacility):
         self,
         total_seconds: int,
         release_action: float,
-        net_secondly_inflow: float,
+        net_inflow_per_second: float,
         current_month: int,
         integ_step: int,
     ) -> float:
@@ -194,7 +195,7 @@ class Dam(ControlledFacility):
             Number of seconds in the timestep.
         release_action: float
             How much m3/s of water should be released.
-        net_secondly_inflow: float
+        net_inflow_per_second: float
             Total inflow to this Dam measured in m3/s.
         current_month: int
             Current month.
@@ -207,7 +208,7 @@ class Dam(ControlledFacility):
             Average monthly release given in m3.
         """
 
-        self.inflow_vector = np.append(self.inflow_vector, net_secondly_inflow)
+        self.inflow_vector = np.append(self.inflow_vector, net_inflow_per_second)
         current_storage = self.storage_vector[-1]
         in_month_releases = array("f", [])
         monthly_evap_total = 0
@@ -222,13 +223,13 @@ class Dam(ControlledFacility):
 
             min_possible_release, max_possible_release = self.storage_to_minmax(current_storage)
 
-            secondly_release = min(max_possible_release, max(min_possible_release, release_action))
+            release_per_second = min(max_possible_release, max(min_possible_release, release_action))
 
-            in_month_releases.append(secondly_release)
+            in_month_releases.append(release_per_second)
 
-            total_addition = net_secondly_inflow * integ_step
+            total_addition = net_inflow_per_second * integ_step
 
-            current_storage += total_addition - evaporation - secondly_release * integ_step
+            current_storage += total_addition - evaporation - release_per_second * integ_step
 
         # Update the amount of water in the Dam
         self.storage_vector.append(current_storage)
