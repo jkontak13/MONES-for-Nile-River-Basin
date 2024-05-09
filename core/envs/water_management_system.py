@@ -54,7 +54,7 @@ class WaterManagementSystem(gym.Env):
 
         return self._determine_observation_space(), self._determine_info()
 
-    def step(self, action: Dict) -> Tuple[ObsType, SupportsFloat, bool, bool, dict]:
+    def step(self, action: Dict) -> Tuple[ObsType, list, bool, bool, dict]:
 
         final_observation = {}
         final_reward = self.rewards
@@ -69,18 +69,19 @@ class WaterManagementSystem(gym.Env):
                 observation, reward, terminated, truncated, info = water_system.step()
             else:
                 raise ValueError()
-            # Get the reward
-            # Check what function is assigned to the water_system, apply it
-            final_reward[water_system.objective_name] += reward
+
+            # Set observation for a specific Facility.
             final_observation[water_system.id] = observation
-            final_reward += reward
+            # Add reward to the objective assigned to this Facility (unless it is a Flow).
+            if not isinstance(water_system, Flow):
+                final_reward[water_system.objective_name] += reward
+            # Determine whether program should stop
             final_terminated = final_terminated or terminated
             final_truncated = final_truncated or truncated
+            # Store additional information
             final_info[water_system.id] = info
 
-        # TODO: Flatten final_observation and create numpy array out of it
-        # TODO: Make the final_reward an array instead of a single number
-        return final_observation, final_reward, final_terminated, final_truncated, final_info
+        return list(final_observation.values()), list(final_reward.values()), final_terminated, final_truncated, final_info
 
     def close(self) -> None:
         # TODO: implement if needed, e.g. for closing opened rendering frames.
