@@ -60,9 +60,9 @@ class Dam(ControlledFacility):
         id: str,
         observation_space: Space,
         action_space: Box,
-        max_capacity: float,
         objective_function,
         objective_name: str = "",
+        max_capacity: float = float("Inf"),
         stored_water: float = 0,
     ) -> None:
         super().__init__(id, observation_space, action_space, max_capacity)
@@ -140,7 +140,6 @@ class Dam(ControlledFacility):
             "current_level": self.level_vector[-1] if self.level_vector else None,
             "current_release": self.release_vector[-1] if self.release_vector else None,
             "evaporation_rates": self.evap_rates.tolist(),
-            "max_capacity": self.max_capacity,
         }
         return info
 
