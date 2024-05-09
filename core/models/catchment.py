@@ -13,6 +13,5 @@ class Catchment(Facility):
     def determine_consumption(self) -> float:
         return -self.water_accumulated
 
-    def determine_info(self) -> str:
-        # TODO: Determine info for Catchment.
-        return ""
+    def determine_info(self) -> dict:
+        return {"water_accumulated": self.water_accumulated}

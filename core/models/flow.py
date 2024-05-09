@@ -1,7 +1,6 @@
-from core.models.facility import Facility, ControlledFacility
-from typing import Optional, List, Union
+from typing import Optional, List, Union, Tuple
 from gymnasium.core import ObsType
-from typing import SupportsFloat
+from core.models.facility import Facility, ControlledFacility
 
 
 class Flow:
@@ -23,11 +22,10 @@ class Flow:
     def set_destination_inflow(self) -> None:
         self.destination.inflow = self.determine_source_outflow()
 
-    def determine_info(self) -> str:
-        # TODO: Determine info for Flow.
-        return ""
+    def determine_info(self) -> dict:
+        return {"flow": self.determine_source_outflow()}
 
-    def step(self) -> tuple[ObsType, float, bool, bool, dict]:
+    def step(self) -> Tuple[Optional[ObsType], float, bool, bool, dict]:
         self.set_destination_inflow()
 
         terminated = self.determine_source_outflow() > self.max_capacity
