@@ -1,8 +1,8 @@
 import numpy as np
 import gymnasium as gym
 from gymnasium.spaces import Space, Dict
-from gymnasium.core import Optional, ObsType
-from typing import Any, List, Union, SupportsFloat
+from gymnasium.core import ObsType
+from typing import Any, List, Union, Optional, SupportsFloat
 from core.models.flow import Flow
 from core.models.facility import Facility, ControlledFacility
 
@@ -18,9 +18,9 @@ class WaterManagementSystem(gym.Env):
     def _determine_observation_space(self) -> Dict:
         return Dict(
             {
-                water_systems.id: water_systems.observation_space
-                for water_systems in self.facilities
-                if isinstance(water_systems, ControlledFacility)
+                water_system.id: water_system.observation_space
+                for water_system in self.water_systems
+                if isinstance(water_system, ControlledFacility)
             },
             self.seed,
         )
@@ -28,16 +28,16 @@ class WaterManagementSystem(gym.Env):
     def _determine_action_space(self) -> Dict:
         return Dict(
             {
-                water_systems.id: water_systems.action_space
-                for water_systems in self.water_systems
-                if isinstance(water_systems, ControlledFacility)
+                water_system.id: water_system.action_space
+                for water_system in self.water_systems
+                if isinstance(water_system, ControlledFacility)
             },
             self.seed,
         )
 
     def _determine_info(self) -> dict[str, Any]:
         # TODO: decide on what we wnat to output in the info.
-        return {"facilites": self.facilities, "flows": self.flows}
+        return {"water_systems": self.water_systems}
 
     def reset(self, seed: Optional[int] = None, options: Optional[dict] = None) -> tuple[ObsType, dict[str, Any]]:
         # We need the following line to seed self.np_random.
@@ -50,11 +50,11 @@ class WaterManagementSystem(gym.Env):
 
     def step(self, action: Dict) -> tuple[ObsType, SupportsFloat, bool, bool, dict]:
 
-        final_observation = None
+        final_observation = {}
         final_reward = 0
         final_terminated = False
         final_truncated = False
-        final_info = None
+        final_info = {}
 
         for water_systems in self.water_systems:
             if isinstance(water_systems, ControlledFacility):
