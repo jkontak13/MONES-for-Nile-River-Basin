@@ -18,9 +18,9 @@ class WaterManagementSystem(gym.Env):
     def _determine_observation_space(self) -> Dict:
         return Dict(
             {
-                water_systems.id: water_systems.observation_space
-                for water_systems in self.facilities
-                if isinstance(water_systems, ControlledFacility)
+                water_system.id: water_system.observation_space
+                for water_system in self.water_systems
+                if isinstance(water_system, ControlledFacility)
             },
             self.seed,
         )
@@ -28,33 +28,34 @@ class WaterManagementSystem(gym.Env):
     def _determine_action_space(self) -> Dict:
         return Dict(
             {
-                water_systems.id: water_systems.action_space
-                for water_systems in self.water_systems
-                if isinstance(water_systems, ControlledFacility)
+                water_system.id: water_system.action_space
+                for water_system in self.water_systems
+                if isinstance(water_system, ControlledFacility)
             },
             self.seed,
         )
 
     def _determine_info(self) -> dict[str, Any]:
         # TODO: decide on what we wnat to output in the info.
-        return {"facilites": self.facilities, "flows": self.flows}
+        return {"facilites": self.water_systems}
 
     def reset(self, seed: Optional[int] = None, options: Optional[dict] = None) -> tuple[ObsType, dict[str, Any]]:
         # We need the following line to seed self.np_random.
         super().reset(seed=seed)
 
-        for water_systems in self.water_systems:
-            water_systems.reset()
+        # TODO: Figure out the reset in facility
+        # for water_system in self.water_systems:
+        #     water_system.reset()
 
         return self._determine_observation_space(), self._determine_info()
 
     def step(self, action: Dict) -> tuple[ObsType, SupportsFloat, bool, bool, dict]:
 
-        final_observation = None
+        final_observation = {}
         final_reward = 0
         final_terminated = False
         final_truncated = False
-        final_info = None
+        final_info = {}
 
         for water_systems in self.water_systems:
             if isinstance(water_systems, ControlledFacility):
@@ -70,6 +71,8 @@ class WaterManagementSystem(gym.Env):
             final_truncated = final_truncated or truncated
             final_info[water_systems.id] = info
 
+        # TODO: Flatten final_observation and create numpy array out of it
+        # TODO: Make the final_reward an array instead of a single number
         return final_observation, final_reward, final_terminated, final_truncated, final_info
 
     def close(self) -> None:

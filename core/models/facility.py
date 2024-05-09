@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from gymnasium.spaces import Space, Box
-from gymnasium.core import ObsType
-from typing import SupportsFloat, tuple
+from gymnasium.core import ObsType, ActType
+from typing import SupportsFloat, Tuple
 
 
 class Facility(ABC):
@@ -31,7 +31,7 @@ class Facility(ABC):
 
 
 class ControlledFacility(ABC):
-    def __init__(self, id: str, observation_space: Space, action_space: ActType, max_capacity: float) -> None:
+    def __init__(self, id: str, observation_space: Space, action_space: ActType, max_capacity: float = float("Inf")) -> None:
         self.id: str = id
         self.inflow: float = 0
         self.outflow: float = 0
