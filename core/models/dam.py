@@ -102,12 +102,47 @@ class Dam(ControlledFacility):
         self.objective_function = objective_function
         self.objective_name = objective_name
 
+        # TODO: Read it from file
+        self.nu_of_days_per_month = [
+            31,  # January
+            28,  # February (non-leap year)
+            31,  # March
+            30,  # April
+            31,  # May
+            30,  # June
+            31,  # July
+            31,  # August
+            30,  # September
+            31,  # October
+            30,  # November
+            31,  # December
+        ]
+        self.months = 0
+
     def determine_reward(self) -> float:
         return self.objective_function(self.stored_water)
 
     def determine_outflow(self, action: float) -> float:
-        # TODO: Determine correct action type.
-        return action
+        # TODO: Make timestep flexible for now it is hardcoded (one month)
+
+        # Timestep is one month
+        # Get the number of days in the month
+        nu_days = self.nu_of_days_per_month[self.months]
+        # Calculate hours
+        total_hours = nu_days * 24
+        # Calculate seconds
+        total_seconds = total_hours * 3600
+        # Calculate integration step
+        integ_step = total_seconds / (nu_days * 48)
+        # Calculate outflow using integration function
+        outflow = self.integration(
+            total_seconds,
+            action,
+            self.inflow,
+            self.months,
+            integ_step,
+        )
+        return outflow
 
     def determine_info(self) -> dict:
         info = {
@@ -121,16 +156,20 @@ class Dam(ControlledFacility):
         return info
 
     def determine_observation(self) -> float:
-        # TODO: Determine observation.
         return self.stored_water
 
     def is_terminated(self) -> bool:
         return self.stored_water > self.max_capacity or self.stored_water < 0
 
     def step(self, action: float) -> tuple[float, float, bool, bool, dict]:
+        # Determine outflow
         self.outflow = self.determine_outflow(action)
-        # TODO: Change stored_water to multiple outflows.
+
+        # Update amount of water in the Dam
         self.stored_water += self.inflow - self.outflow
+
+        # Increase the month number by one
+        self.months = (self.months + 1) % 12
 
         return self.determine_observation(), self.determine_reward(), self.is_terminated(), False, self.determine_info()
 
@@ -172,8 +211,7 @@ class Dam(ControlledFacility):
         policy_release_decision: float
             How much m3/s of water should be released.
         net_secondly_inflow: float
-            How much water was transferred in the upper region of the river (?)
-            Something like total inflow up to this dam.
+            Total inflow to this Dam.
         current_month: int
             Current month.
         integ_step: int
