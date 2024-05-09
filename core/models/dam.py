@@ -178,7 +178,7 @@ class Dam(ControlledFacility):
     def integration(
         self,
         total_seconds: int,
-        policy_release_decision: float,
+        release_action: float,
         net_secondly_inflow: float,
         current_month: int,
         integ_step: int,
@@ -192,10 +192,10 @@ class Dam(ControlledFacility):
         ----------
         total_seconds: int
             Number of seconds in the timestep.
-        policy_release_decision: float
+        release_action: float
             How much m3/s of water should be released.
         net_secondly_inflow: float
-            Total inflow to this Dam.
+            Total inflow to this Dam measured in m3/s.
         current_month: int
             Current month.
         integ_step: int
@@ -203,8 +203,8 @@ class Dam(ControlledFacility):
 
         Returns
         -------
-        avg_monthly_release
-
+        avg_monthly_release: float
+            Average monthly release given in m3.
         """
 
         self.inflow_vector = np.append(self.inflow_vector, net_secondly_inflow)
@@ -222,7 +222,7 @@ class Dam(ControlledFacility):
 
             min_possible_release, max_possible_release = self.storage_to_minmax(current_storage)
 
-            secondly_release = min(max_possible_release, max(min_possible_release, policy_release_decision))
+            secondly_release = min(max_possible_release, max(min_possible_release, release_action))
 
             in_month_releases.append(secondly_release)
 
@@ -237,8 +237,6 @@ class Dam(ControlledFacility):
         # Calculate the ouflow of water
         avg_monthly_release = np.mean(in_month_releases)
         self.release_vector.append(avg_monthly_release)
-
-        # self.total_evap = np.append(self.total_evap, monthly_evap_total)
 
         # Record level based on storage for time t
         self.level_vector.append(self.storage_to_level(current_storage))
