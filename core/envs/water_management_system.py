@@ -68,7 +68,7 @@ class WaterManagementSystem(gym.Env):
             # Set observation for a specific Facility.
             final_observation[water_system.id] = observation
             # Add reward to the objective assigned to this Facility (unless it is a Flow).
-            if not isinstance(water_system, Flow):
+            if isinstance(water_system, Facility) or isinstance(water_system, ControlledFacility):
                 final_reward[water_system.objective_name] += reward
             # Determine whether program should stop
             final_terminated = final_terminated or terminated
