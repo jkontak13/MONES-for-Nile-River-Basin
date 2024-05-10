@@ -10,32 +10,7 @@ from core.models.catchment import Catchment
 import pprint
 
 
-def example_kris():
-    # The numbers below are random and do not reflect actual constants of the Nile River simulation
-    power_plant = PowerPlant("power-plant", 0.8, 1000, 1000, 1000, 0.2)
-    dam = Dam("GERD", Box(0, 1000), Box(0, 1000), 1000)
-    irrigation_system = IrrigationSystem("irrigation-system", 500)
-    catchment = Catchment("catchment", 1000)
-
-    power_plan_inflow = Inflow("inflow", power_plant, 1000, 1000)
-    power_plant_dam_flow = Flow("power-plant-dam-flow", power_plant, dam, 1000)
-    dam_irrigation_system_flow = Flow("dam_irrigation_system_flow", [dam, catchment], irrigation_system, 1000)
-    irrigation_system_outflow = Outflow("outflow", dam, 1000)
-
-    water_management_system = WaterManagementSystem(
-        [
-            power_plan_inflow,
-            power_plant,
-            power_plant_dam_flow,
-            dam,
-            dam_irrigation_system_flow,
-            irrigation_system,
-            irrigation_system_outflow,
-        ]
-    )
-
-
-def example1():
+def nile_river_simulation(nu_of_timesteps=3):
     # Create power plant, dam and irrigation system. Initialise with semi-random parameters.
     # Set objective functions to identity for power plant, minimum_water_level for dam and water_deficit_minimised
     # for irrigation system.
@@ -68,7 +43,7 @@ def example1():
     )
 
     # Simulate for 3 timestamps (3 months).
-    for t in range(3):
+    for t in range(nu_of_timesteps):
         action = water_management_system.action_space.sample()
         print("Action:", action)
         final_observation, final_reward, final_terminated, final_truncated, final_info = water_management_system.step(
@@ -80,4 +55,4 @@ def example1():
 
 
 if __name__ == "__main__":
-    example1()
+    nile_river_simulation()
