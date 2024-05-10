@@ -198,7 +198,6 @@ class Dam(ControlledFacility):
         avg_monthly_release: float
             Average monthly release given in m3.
         """
-
         self.inflow_vector = np.append(self.inflow_vector, net_inflow_per_second)
         current_storage = self.storage_vector[-1]
         in_month_releases = array("f", [])
@@ -232,7 +231,6 @@ class Dam(ControlledFacility):
 
         # Record level based on storage for time t
         self.level_vector.append(self.storage_to_level(current_storage))
-
         return avg_monthly_release
 
     @staticmethod

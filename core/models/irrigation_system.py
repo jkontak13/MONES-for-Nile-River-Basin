@@ -1,6 +1,6 @@
+from typing import Tuple
+from gymnasium.core import ObsType
 from core.models.facility import Facility
-import numpy as np
-from pathlib import Path
 
 
 """
@@ -31,12 +31,20 @@ determine_info():
 
 class IrrigationSystem(Facility):
 
-    def __init__(self, id: str, demand: list[float]) -> None:
+    def __init__(
+        self,
+        id: str,
+        demand: list[float],
+        objective_function,
+        objective_name: str,
+    ) -> None:
         super().__init__(id)
         self.demand = demand
         self.total_deficit = 0
         self.months: int = 0
         self.list_deficits: list[float] = []
+        self.objective_function = objective_function
+        self.objective_name = objective_name
 
     """
     Calculates the reward (irrigation deficit) given the values of its attributes 
@@ -47,13 +55,24 @@ class IrrigationSystem(Facility):
         Water deficit of the irrigation system
     """
 
-    def determine_reward(self) -> float:
+    def determine_deficit(self) -> float:
         consumption = self.determine_consumption()
         deficit = self.demand[self.months] - consumption
         self.total_deficit += deficit
-        self.months += 1
         self.list_deficits.append(deficit)
         return deficit
+
+    def determine_reward(self) -> float:
+        """
+        Calculates the reward given the objective function for this district.
+        Uses demand and consumption.
+
+        Returns:
+        ----------
+        float
+            Reward for the objective function.
+        """
+        return self.objective_function(self.demand[self.months], self.determine_consumption())
 
     """
     Determines how much water is consumed by the irrigation system
@@ -86,3 +105,12 @@ class IrrigationSystem(Facility):
             "total_deficit": self.total_deficit,
             "list_deficits": self.list_deficits,
         }
+
+    def step(self) -> Tuple[ObsType, float, bool, bool, dict]:
+        # Get info and reward with the OLD month value
+        info = self.determine_info()
+        reward = self.determine_reward()
+
+        # Increment the timestep
+        self.months += 1
+        return None, reward, False, False, info

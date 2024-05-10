@@ -1,4 +1,6 @@
 from typing import Optional, List, Union, Tuple
+from core.models.facility import Facility, ControlledFacility
+from typing import Optional, Union, Tuple
 from gymnasium.core import ObsType
 from core.models.facility import Facility, ControlledFacility
 
@@ -29,7 +31,7 @@ class Flow:
         self.set_destination_inflow()
 
         terminated = self.determine_source_outflow() > self.max_capacity
-        reward = float("-inf") if terminated else 0
+        reward = float("-inf") if terminated else 0.0
 
         return None, reward, terminated, False, self.determine_info()
 
