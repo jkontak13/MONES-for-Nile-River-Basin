@@ -50,7 +50,7 @@ class Inflow(Flow):
         timestep: int = 0,
     ) -> None:
         super().__init__(name, None, destination, max_capacity, timestep)
-        self.inflow: float = inflow
+        self.inflow: List[float] = inflow
 
     def determine_source_outflow(self) -> float:
         return self.inflow[self.timestep]
