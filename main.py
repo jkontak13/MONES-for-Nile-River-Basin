@@ -9,14 +9,13 @@ from core.models.flow import Flow, Outflow, Inflow
 from core.models.objective import Objective
 from core.models.power_plant import PowerPlant
 from core.models.irrigation_system import IrrigationSystem
-from core.models.catchment import Catchment
 
 
 def nile_river_simulation(nu_of_timesteps=3):
     # Create power plant, dam and irrigation system. Initialise with semi-random parameters.
     # Set objective functions to identity for power plant, minimum_water_level for dam and water_deficit_minimised
     # for irrigation system.
-    power_plant = PowerPlant("power-plant", Objective.identity, "ethiopia_power", 1000, 1000, 500, 100000, 1)
+    power_plant = PowerPlant("power-plant", Objective.identity, "ethiopia_power", 1000, 1000, 500, 0, 1)
     dam = Dam("GERD", Space(), Box(0, 1000), Objective.minimum_water_level, "min_HAD", stored_water=5100000000)
     irrigation_system = IrrigationSystem(
         "irrigation-system", [100, 50, 1000], Objective.water_deficit_minimised, "egypt_deficit"
