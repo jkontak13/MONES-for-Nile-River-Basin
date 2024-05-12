@@ -7,7 +7,7 @@ from numpy.core.multiarray import interp as compiled_interp
 from array import array
 from bisect import bisect_right
 
-data_directory = Path(__file__).parents[1] / "data" / "dams"
+dam_data_directory = Path(__file__).parents[1] / "data" / "dams"
 
 
 class Dam(ControlledFacility):
@@ -68,10 +68,10 @@ class Dam(ControlledFacility):
         super().__init__(name, observation_space, action_space, timestep, max_capacity)
         self.stored_water: float = stored_water
 
-        self.evap_rates = np.loadtxt(data_directory / f"evap_{name}.txt")
-        self.storage_to_minmax_rel = np.loadtxt(data_directory / f"store_min_max_release_{name}.txt")
-        self.storage_to_level_rel = np.loadtxt(data_directory / f"store_level_rel_{name}.txt")
-        self.storage_to_surface_rel = np.loadtxt(data_directory / f"store_sur_rel_{name}.txt")
+        self.evap_rates = np.loadtxt(dam_data_directory / f"evap_{name}.txt")
+        self.storage_to_minmax_rel = np.loadtxt(dam_data_directory / f"store_min_max_release_{name}.txt")
+        self.storage_to_level_rel = np.loadtxt(dam_data_directory / f"store_level_rel_{name}.txt")
+        self.storage_to_surface_rel = np.loadtxt(dam_data_directory / f"store_sur_rel_{name}.txt")
 
         self.storage_vector = array("f", [])
         self.level_vector = array("f", [])
