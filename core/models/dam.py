@@ -7,7 +7,7 @@ from numpy.core.multiarray import interp as compiled_interp
 from array import array
 from bisect import bisect_right
 
-data_directory = Path(__file__).parents[1] / "data"
+data_directory = Path(__file__).parents[1] / "data" / "dams"
 
 
 class Dam(ControlledFacility):
