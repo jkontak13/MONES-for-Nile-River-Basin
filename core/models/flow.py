@@ -28,13 +28,16 @@ class Flow:
         return {"flow": self.determine_source_outflow()}
 
     def step(self) -> Tuple[Optional[ObsType], float, bool, bool, dict]:
-        self.timestep += 1
         self.set_destination_inflow()
 
         terminated = self.determine_source_outflow() > self.max_capacity
+        truncated = False
         reward = float("-inf") if terminated else 0.0
+        info = self.determine_info()
 
-        return None, reward, terminated, False, self.determine_info()
+        self.timestep += 1
+
+        return None, reward, terminated, truncated, info
 
 
 class Inflow(Flow):

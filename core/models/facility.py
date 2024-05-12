@@ -30,12 +30,16 @@ class Facility(ABC):
         raise NotImplementedError()
 
     def step(self) -> Tuple[ObsType, float, bool, bool, dict]:
-        self.timestep += 1
         self.outflow = self.inflow - self.determine_consumption()
         # TODO: Determine if we need to satisy any terminating codnitions for facility.
+        reward = self.determine_reward()
         terminated = False
+        truncated = False
+        info = self.determine_info()
 
-        return None, self.determine_reward(), terminated, False, self.determine_info()
+        self.timestep += 1
+
+        return None, reward, terminated, truncated, info
 
 
 class ControlledFacility(ABC):
@@ -83,14 +87,21 @@ class ControlledFacility(ABC):
         raise NotImplementedError()
 
     def step(self, action: ActType) -> Tuple[ObsType, SupportsFloat, bool, bool, dict]:
-        self.timestep += 1
         self.outflow = self.determine_outflow(action)
         # TODO: Change stored_water to multiple outflows.
 
+        observation = self.determine_observation()
+        reward = self.determine_reward()
+        terminated = self.is_terminated()
+        truncated = False
+        info = self.determine_info()
+
+        self.timestep += 1
+
         return (
-            self.determine_observation(),
-            self.determine_reward(),
-            self.is_terminated(),
-            False,
-            self.determine_info(),
+            observation,
+            reward,
+            terminated,
+            truncated,
+            info,
         )
