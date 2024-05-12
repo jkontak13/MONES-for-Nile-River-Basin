@@ -1,22 +1,22 @@
 from typing import Optional, List, Union, Tuple
 from core.models.facility import Facility, ControlledFacility
-from typing import Optional, Union, Tuple
 from gymnasium.core import ObsType
-from core.models.facility import Facility, ControlledFacility
 
 
 class Flow:
     def __init__(
         self,
-        id: str,
+        name: str,
         sources: List[Union[Facility, ControlledFacility]],
         destination: Optional[Union[Facility, ControlledFacility]],
         max_capacity: float,
+        timestep: int = 0,
     ) -> None:
-        self.id: str = id
+        self.name: str = name
         self.sources: List[Union[Facility, ControlledFacility]] = sources
         self.destination: Union[Facility, ControlledFacility] = destination
         self.max_capacity: float = max_capacity
+        self.timestep = timestep
 
     def determine_source_outflow(self) -> float:
         return sum(source.outflow for source in self.sources)
@@ -31,25 +31,36 @@ class Flow:
         self.set_destination_inflow()
 
         terminated = self.determine_source_outflow() > self.max_capacity
+        truncated = False
         reward = float("-inf") if terminated else 0.0
+        info = self.determine_info()
 
-        return None, reward, terminated, False, self.determine_info()
+        self.timestep += 1
+
+        return None, reward, terminated, truncated, info
 
 
 class Inflow(Flow):
     def __init__(
-        self, id: str, destination: Union[Facility, ControlledFacility], max_capacity: float, inflow: float
+        self,
+        name: str,
+        destination: Union[Facility, ControlledFacility],
+        max_capacity: float,
+        inflow: List[float],
+        timestep: int = 0,
     ) -> None:
-        super().__init__(id, None, destination, max_capacity)
-        self.inflow: float = inflow
+        super().__init__(name, None, destination, max_capacity, timestep)
+        self.inflow: List[float] = inflow
 
     def determine_source_outflow(self) -> float:
-        return self.inflow
+        return self.inflow[self.timestep]
 
 
 class Outflow(Flow):
-    def __init__(self, id: str, sources: List[Union[Facility, ControlledFacility]], max_capacity: float) -> None:
-        super().__init__(id, sources, None, max_capacity)
+    def __init__(
+        self, name: str, sources: List[Union[Facility, ControlledFacility]], max_capacity: float, timestep: int = 0
+    ) -> None:
+        super().__init__(name, sources, None, max_capacity, timestep)
 
     def set_destination_inflow(self) -> None:
         pass

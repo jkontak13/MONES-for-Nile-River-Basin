@@ -7,7 +7,7 @@ from numpy.core.multiarray import interp as compiled_interp
 from array import array
 from bisect import bisect_right
 
-data_directory = Path(__file__).parents[1] / "data"
+dam_data_directory = Path(__file__).parents[1] / "data" / "dams"
 
 
 class Dam(ControlledFacility):
@@ -16,7 +16,7 @@ class Dam(ControlledFacility):
 
     Attributes
     ----------
-    id: str
+    name: str
         Lowercase non-spaced name of the reservoir
     storage_vector: np.array (1xH)
         m3
@@ -48,7 +48,6 @@ class Dam(ControlledFacility):
         total_seconds: int,
         release_action: float,
         net_inflow_per_second: float,
-        current_month: int,
         integ_step: int,
         )
         Returns average monthly water release.
@@ -56,21 +55,22 @@ class Dam(ControlledFacility):
 
     def __init__(
         self,
-        id: str,
+        name: str,
         observation_space: Space,
         action_space: Box,
         objective_function,
         objective_name: str = "",
+        timestep: int = 0,
         max_capacity: float = float("Inf"),
         stored_water: float = 0,
     ) -> None:
-        super().__init__(id, observation_space, action_space, max_capacity)
+        super().__init__(name, observation_space, action_space, timestep, max_capacity)
         self.stored_water: float = stored_water
 
-        self.evap_rates = np.loadtxt(data_directory / f"evap_{id}.txt")
-        self.storage_to_minmax_rel = np.loadtxt(data_directory / f"store_min_max_release_{id}.txt")
-        self.storage_to_level_rel = np.loadtxt(data_directory / f"store_level_rel_{id}.txt")
-        self.storage_to_surface_rel = np.loadtxt(data_directory / f"store_sur_rel_{id}.txt")
+        self.evap_rates = np.loadtxt(dam_data_directory / f"evap_{name}.txt")
+        self.storage_to_minmax_rel = np.loadtxt(dam_data_directory / f"store_min_max_release_{name}.txt")
+        self.storage_to_level_rel = np.loadtxt(dam_data_directory / f"store_level_rel_{name}.txt")
+        self.storage_to_surface_rel = np.loadtxt(dam_data_directory / f"store_sur_rel_{name}.txt")
 
         self.storage_vector = array("f", [])
         self.level_vector = array("f", [])
@@ -98,7 +98,6 @@ class Dam(ControlledFacility):
             30,  # November
             31,  # December
         ]
-        self.months = 0
 
     def determine_reward(self) -> float:
         return self.objective_function(self.stored_water)
@@ -108,7 +107,7 @@ class Dam(ControlledFacility):
 
         # Timestep is one month
         # Get the number of days in the month
-        nu_days = self.nu_of_days_per_month[self.months]
+        nu_days = self.nu_of_days_per_month[self.determine_month()]
         # Calculate hours
         total_hours = nu_days * 24
         # Calculate seconds
@@ -120,14 +119,13 @@ class Dam(ControlledFacility):
             total_seconds,
             action,
             self.inflow,
-            self.months,
             integ_step,
         )
         return outflow
 
     def determine_info(self) -> dict:
         info = {
-            "id": self.id,
+            "name": self.name,
             "stored_water": self.stored_water,
             "current_level": self.level_vector[-1] if self.level_vector else None,
             "current_release": self.release_vector[-1] if self.release_vector else None,
@@ -141,13 +139,8 @@ class Dam(ControlledFacility):
     def is_terminated(self) -> bool:
         return self.stored_water > self.max_capacity or self.stored_water < 0
 
-    def step(self, action: float) -> tuple[float, float, bool, bool, dict]:
-        # Determine outflow (determine_outflow->integration() updates the stored_water variable)
-        self.outflow = self.determine_outflow(action)
-        # Increase the month number by one
-        self.months = (self.months + 1) % 12
-
-        return self.determine_observation(), self.determine_reward(), self.is_terminated(), False, self.determine_info()
+    def determine_month(self):
+        return self.timestep % 12
 
     def storage_to_level(self, s: float) -> float:
         return self.modified_interp(s, self.storage_to_level_rel[0], self.storage_to_level_rel[1])
@@ -172,7 +165,6 @@ class Dam(ControlledFacility):
         total_seconds: int,
         release_action: float,
         net_inflow_per_second: float,
-        current_month: int,
         integ_step: int,
     ) -> float:
         """
@@ -188,8 +180,6 @@ class Dam(ControlledFacility):
             How much m3/s of water should be released.
         net_inflow_per_second: float
             Total inflow to this Dam measured in m3/s.
-        current_month: int
-            Current month.
         integ_step: int
             Size of the integration step.
 
@@ -208,7 +198,7 @@ class Dam(ControlledFacility):
 
             surface = self.storage_to_surface(current_storage)
 
-            evaporation = surface * (self.evap_rates[current_month - 1] / (100 * integ_step_count))
+            evaporation = surface * (self.evap_rates[self.determine_month()] / (100 * integ_step_count))
             monthly_evap_total += evaporation
 
             min_possible_release, max_possible_release = self.storage_to_minmax(current_storage)

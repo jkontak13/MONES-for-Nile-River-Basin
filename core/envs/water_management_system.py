@@ -18,7 +18,7 @@ class WaterManagementSystem(gym.Env):
     def _determine_observation_space(self) -> Dict:
         return Dict(
             {
-                water_system.id: water_system.observation_space
+                water_system.name: water_system.observation_space
                 for water_system in self.water_systems
                 if isinstance(water_system, ControlledFacility)
             },
@@ -28,7 +28,7 @@ class WaterManagementSystem(gym.Env):
     def _determine_action_space(self) -> Dict:
         return Dict(
             {
-                water_system.id: water_system.action_space
+                water_system.name: water_system.action_space
                 for water_system in self.water_systems
                 if isinstance(water_system, ControlledFacility)
             },
@@ -59,14 +59,14 @@ class WaterManagementSystem(gym.Env):
 
         for water_system in self.water_systems:
             if isinstance(water_system, ControlledFacility):
-                observation, reward, terminated, truncated, info = water_system.step(action[water_system.id])
+                observation, reward, terminated, truncated, info = water_system.step(action[water_system.name])
             elif isinstance(water_system, Facility) or isinstance(water_system, Flow):
                 observation, reward, terminated, truncated, info = water_system.step()
             else:
                 raise ValueError()
 
             # Set observation for a specific Facility.
-            final_observation[water_system.id] = observation
+            final_observation[water_system.name] = observation
             # Add reward to the objective assigned to this Facility (unless it is a Flow).
             if isinstance(water_system, Facility) or isinstance(water_system, ControlledFacility):
                 final_reward[water_system.objective_name] += reward
@@ -74,7 +74,7 @@ class WaterManagementSystem(gym.Env):
             final_terminated = final_terminated or terminated
             final_truncated = final_truncated or truncated
             # Store additional information
-            final_info[water_system.id] = info
+            final_info[water_system.name] = info
 
         return (
             list(final_observation.values()),
