@@ -48,7 +48,6 @@ class Dam(ControlledFacility):
         total_seconds: int,
         release_action: float,
         net_inflow_per_second: float,
-        current_month: int,
         integ_step: int,
         )
         Returns average monthly water release.
@@ -99,7 +98,6 @@ class Dam(ControlledFacility):
             30,  # November
             31,  # December
         ]
-        self.months = 0
 
     def determine_reward(self) -> float:
         return self.objective_function(self.stored_water)
@@ -109,7 +107,7 @@ class Dam(ControlledFacility):
 
         # Timestep is one month
         # Get the number of days in the month
-        nu_days = self.nu_of_days_per_month[self.months]
+        nu_days = self.nu_of_days_per_month[self.determine_month()]
         # Calculate hours
         total_hours = nu_days * 24
         # Calculate seconds
@@ -121,7 +119,6 @@ class Dam(ControlledFacility):
             total_seconds,
             action,
             self.inflow,
-            self.months,
             integ_step,
         )
         return outflow
@@ -142,14 +139,8 @@ class Dam(ControlledFacility):
     def is_terminated(self) -> bool:
         return self.stored_water > self.max_capacity or self.stored_water < 0
 
-    def step(self, action: float) -> tuple[float, float, bool, bool, dict]:
-        self.timestep += 1
-        # Determine outflow (determine_outflow->integration() updates the stored_water variable)
-        self.outflow = self.determine_outflow(action)
-        # Increase the month number by one
-        self.months = (self.months + 1) % 12
-
-        return self.determine_observation(), self.determine_reward(), self.is_terminated(), False, self.determine_info()
+    def determine_month(self):
+        return self.timestep % 12
 
     def storage_to_level(self, s: float) -> float:
         return self.modified_interp(s, self.storage_to_level_rel[0], self.storage_to_level_rel[1])
@@ -174,7 +165,6 @@ class Dam(ControlledFacility):
         total_seconds: int,
         release_action: float,
         net_inflow_per_second: float,
-        current_month: int,
         integ_step: int,
     ) -> float:
         """
@@ -190,8 +180,6 @@ class Dam(ControlledFacility):
             How much m3/s of water should be released.
         net_inflow_per_second: float
             Total inflow to this Dam measured in m3/s.
-        current_month: int
-            Current month.
         integ_step: int
             Size of the integration step.
 
@@ -210,7 +198,7 @@ class Dam(ControlledFacility):
 
             surface = self.storage_to_surface(current_storage)
 
-            evaporation = surface * (self.evap_rates[current_month - 1] / (100 * integ_step_count))
+            evaporation = surface * (self.evap_rates[self.determine_month()] / (100 * integ_step_count))
             monthly_evap_total += evaporation
 
             min_possible_release, max_possible_release = self.storage_to_minmax(current_storage)

@@ -1,44 +1,42 @@
-from typing import Tuple
-from gymnasium.core import ObsType
 from core.models.facility import Facility
-
-"""
-Class to represent Hydro-energy Powerplant
-
-Attributes:
-----------
-name : str
-    identifier
-efficiency : float
-    Efficiency coefficient (mu) used in hydropower formula
-max_turbine_flow : float
-    Maximum possible flow that can be passed through the turbines for the
-    purpose of hydroenergy production
-head_start_level : float
-    Minimum elevation of water level that is used to calculate hydraulic
-    head for hydropower production
-max_capacity : float
-    Total design capacity (mW) of the plant
-water_level_coeff : float
-    Coefficient that determines the water level based on the volume of outflow
-    Used to calculate at what level the head of the power plant operates
-operating_hours : float
-    Amount of hours that the plant operates, used to calculate power generation
-water_usage : float
-    Amount of water  that is used by plant, decimal coefficient
-
-Methods:
-----------
-determine_reward():
-    Calculates the reward (power generation) given the values of its attributes 
-determine_consumption():
-    Determines how much water is consumed by the power plant
-determine_info():
-    Returns info about the hydro-energy powerplant
-"""
 
 
 class PowerPlant(Facility):
+    """
+    Class to represent Hydro-energy Powerplant
+
+    Attributes:
+    ----------
+    name : str
+        identifier
+    efficiency : float
+        Efficiency coefficient (mu) used in hydropower formula
+    max_turbine_flow : float
+        Maximum possible flow that can be passed through the turbines for the
+        purpose of hydroenergy production
+    head_start_level : float
+        Minimum elevation of water level that is used to calculate hydraulic
+        head for hydropower production
+    max_capacity : float
+        Total design capacity (mW) of the plant
+    water_level_coeff : float
+        Coefficient that determines the water level based on the volume of outflow
+        Used to calculate at what level the head of the power plant operates
+    operating_hours : float
+        Amount of hours that the plant operates, used to calculate power generation
+    water_usage : float
+        Amount of water  that is used by plant, decimal coefficient
+
+    Methods:
+    ----------
+    determine_reward():
+        Calculates the reward (power generation) given the values of its attributes
+    determine_consumption():
+        Determines how much water is consumed by the power plant
+    determine_info():
+        Returns info about the hydro-energy powerplant
+    """
+
     def __init__(
         self,
         name: str,
@@ -65,24 +63,6 @@ class PowerPlant(Facility):
         self.water_usage = water_usage
         self.production_sum = 0
 
-    """
-    Calculates power production in MWh.
-
-    Parameters:
-    ----------
-    m3_to_kg_factor : int
-        Factor to multiply by, to go from m3 to kg
-    w_mw_conversion : float
-        Factor to convert W to mW
-    g : float
-        Gravity constant
-
-    Returns:
-    ----------
-    float
-        Plant's power production in mWh
-    """
-
     # Constants are configured as parameters with default values
     def determine_production(
         self,
@@ -90,6 +70,23 @@ class PowerPlant(Facility):
         w_mw_conversion: float = 1e-6,
         g: float = 9.81,
     ) -> float:
+        """
+        Calculates power production in MWh.
+
+        Parameters:
+        ----------
+        m3_to_kg_factor : int
+            Factor to multiply by, to go from m3 to kg
+        w_mw_conversion : float
+            Factor to convert W to mW
+        g : float
+            Gravity constant
+
+        Returns:
+        ----------
+        float
+            Plant's power production in mWh
+        """
         # Turbine flow is equal to outflow, as long as it does not exceed maximum turbine flow
         turbine_flow = min(self.outflow, self.max_turbine_flow)
 
@@ -114,45 +111,42 @@ class PowerPlant(Facility):
 
         return production
 
-    """
-    Determines reward for the power plant using the power production.
-    
-    Parameters:
-    ----------
-    objective_function : (float) -> float
-        Function calculating the objective given the power production.
-
-    Returns:
-    ----------
-    float
-        Reward.
-    """
-
     def determine_reward(self) -> float:
+        """
+        Determines reward for the power plant using the power production.
+
+        Parameters:
+        ----------
+        objective_function : (float) -> float
+            Function calculating the objective given the power production.
+
+        Returns:
+        ----------
+        float
+            Reward.
+        """
         return self.objective_function(self.determine_production())
 
-    """
-    Determines water consumption.
-
-    Returns:
-    ----------
-    float
-        How much water is consumed
-    """
-
     def determine_consumption(self) -> float:
+        """
+        Determines water consumption.
+
+        Returns:
+        ----------
+        float
+            How much water is consumed
+        """
         return self.inflow * self.water_usage
 
-    """
-    Determines info of hydro-energy power plant
-
-    Returns:
-    ----------
-    dict
-        Info about power plant (name, inflow, outflow, water usage, timestep, total production)
-    """
-
     def determine_info(self) -> dict:
+        """
+        Determines info of hydro-energy power plant
+
+        Returns:
+        ----------
+        dict
+            Info about power plant (name, inflow, outflow, water usage, timestep, total production)
+        """
         return {
             "name": self.name,
             "inflow": self.inflow,
@@ -161,12 +155,3 @@ class PowerPlant(Facility):
             "timestep": self.timestep,
             "total production (MWh)": self.production_sum,
         }
-
-    def step(self) -> Tuple[ObsType, float, bool, bool, dict]:
-        self.timestep += 1
-        reward = self.determine_reward()
-        info = self.determine_info()
-
-        # Make all the water go through the PowerPlant.
-        self.outflow = self.inflow
-        return None, reward, False, False, info

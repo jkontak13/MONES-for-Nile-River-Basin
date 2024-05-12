@@ -1,35 +1,31 @@
-from typing import Tuple
-from gymnasium.core import ObsType
 from core.models.facility import Facility
 
 
-"""
-Class to represent Irrigation System
-
-Attributes:
-----------
-name : str
-    identifier
-demand : float
-   The list of monthly demand of the irrigation system 
-total_deficit : float
-   The total amount of water deficit we have 
-list_deficits : list[float]
-   The monthly list of the deficit of the irrigation system 
-
-
-Methods:
-----------
-determine_reward():
-    Calculates the reward (irrigation deficit) given the values of its attributes 
-determine_consumption():
-    Determines how much water is consumed by the irrigation system
-determine_info():
-    Returns info about the irrigation sustem
-"""
-
-
 class IrrigationSystem(Facility):
+    """
+    Class to represent Irrigation System
+
+    Attributes:
+    ----------
+    name : str
+        identifier
+    demand : float
+    The list of monthly demand of the irrigation system
+    total_deficit : float
+    The total amount of water deficit we have
+    list_deficits : list[float]
+    The monthly list of the deficit of the irrigation system
+
+
+    Methods:
+    ----------
+    determine_reward():
+        Calculates the reward (irrigation deficit) given the values of its attributes
+    determine_consumption():
+        Determines how much water is consumed by the irrigation system
+    determine_info():
+        Returns info about the irrigation sustem
+    """
 
     def __init__(
         self, name: str, demand: list[float], objective_function, objective_name: str, timestep: int = 0
@@ -39,16 +35,15 @@ class IrrigationSystem(Facility):
         self.total_deficit = 0
         self.list_deficits: list[float] = []
 
-    """
-    Calculates the reward (irrigation deficit) given the values of its attributes 
-
-    Returns:
-    ----------
-    float
-        Water deficit of the irrigation system
-    """
-
     def determine_deficit(self) -> float:
+        """
+        Calculates the reward (irrigation deficit) given the values of its attributes
+
+        Returns:
+        ----------
+        float
+            Water deficit of the irrigation system
+        """
         consumption = self.determine_consumption()
         deficit = self.demand[self.timestep] - consumption
         self.total_deficit += deficit
@@ -67,28 +62,26 @@ class IrrigationSystem(Facility):
         """
         return self.objective_function(self.demand[self.timestep], self.determine_consumption())
 
-    """
-    Determines how much water is consumed by the irrigation system
-
-    Returns:
-    ----------
-    float
-        Water consumption
-    """
-
     def determine_consumption(self) -> float:
+        """
+        Determines how much water is consumed by the irrigation system
+
+        Returns:
+        ----------
+        float
+            Water consumption
+        """
         return min(self.demand[self.timestep], self.inflow)
 
-    """
-    Determines info of irrigation system
-
-    Returns:
-    ----------
-    dict
-        Info about irrigation system (name, name, inflow, outflow, demand, timestep, deficit)
-    """
-
     def determine_info(self) -> dict:
+        """
+        Determines info of irrigation system
+
+        Returns:
+        ----------
+        dict
+            Info about irrigation system (name, name, inflow, outflow, demand, timestep, deficit)
+        """
         return {
             "name": self.name,
             "inflow": self.inflow,
@@ -98,13 +91,3 @@ class IrrigationSystem(Facility):
             "total_deficit": self.total_deficit,
             "list_deficits": self.list_deficits,
         }
-
-    def step(self) -> Tuple[ObsType, float, bool, bool, dict]:
-        # Increment the timestep
-        self.timestep += 1
-
-        # Get info and reward with the OLD month value
-        info = self.determine_info()
-        reward = self.determine_reward()
-
-        return None, reward, False, False, info
