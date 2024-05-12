@@ -61,10 +61,11 @@ class Dam(ControlledFacility):
         action_space: Box,
         objective_function,
         objective_name: str = "",
+        timestep: int = 0,
         max_capacity: float = float("Inf"),
         stored_water: float = 0,
     ) -> None:
-        super().__init__(name, observation_space, action_space, max_capacity)
+        super().__init__(name, observation_space, action_space, timestep, max_capacity)
         self.stored_water: float = stored_water
 
         self.evap_rates = np.loadtxt(data_directory / f"evap_{name}.txt")
@@ -142,6 +143,7 @@ class Dam(ControlledFacility):
         return self.stored_water > self.max_capacity or self.stored_water < 0
 
     def step(self, action: float) -> tuple[float, float, bool, bool, dict]:
+        self.timestep += 1
         # Determine outflow (determine_outflow->integration() updates the stored_water variable)
         self.outflow = self.determine_outflow(action)
         # Increase the month number by one

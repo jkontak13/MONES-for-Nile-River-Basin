@@ -36,34 +36,33 @@ determine_consumption():
 determine_info():
     Returns info about the hydro-energy powerplant
 """
+
+
 class PowerPlant(Facility):
     def __init__(
         self,
         name: str,
+        objective_function,
+        objective_name: str,
         efficiency: float,
         max_turbine_flow: float,
         head_start_level: float,
         max_capacity: float,
         water_level_coeff: float,
-        objective_function,
-        objective_name: str,
         # TODO: find out if operating hours for power plants differ
         operating_hours: float = 24 * 30,
         # TODO: determine actual water usage for power plants, 0.0 for ease now
         water_usage: float = 0.0,
+        timestep: int = 0,
     ) -> None:
-        super().__init__(name)
+        super().__init__(name, objective_function, objective_name, timestep)
         self.efficiency = efficiency
         self.max_turbine_flow = max_turbine_flow
         self.head_start_level = head_start_level
         self.max_capacity = max_capacity
         self.water_level_coeff = water_level_coeff
-        self.objective_function = objective_function
-        self.objective_name = objective_name
         self.operating_hours = operating_hours
         self.water_usage = water_usage
-        # Create value to track number of months and total production, can be used to track yearly or montly averages
-        self.months = 0
         self.production_sum = 0
 
     """
@@ -150,7 +149,7 @@ class PowerPlant(Facility):
     Returns:
     ----------
     dict
-        Info about power plant (name, inflow, outflow, water usage, months, total production)
+        Info about power plant (name, inflow, outflow, water usage, timestep, total production)
     """
 
     def determine_info(self) -> dict:
@@ -159,14 +158,14 @@ class PowerPlant(Facility):
             "inflow": self.inflow,
             "outflow": self.outflow,
             "water_usage": self.water_usage,
-            "months": self.months,
+            "timestep": self.timestep,
             "total production (MWh)": self.production_sum,
         }
 
     def step(self) -> Tuple[ObsType, float, bool, bool, dict]:
+        self.timestep += 1
         reward = self.determine_reward()
         info = self.determine_info()
-        self.months += 1
 
         # Make all the water go through the PowerPlant.
         self.outflow = self.inflow

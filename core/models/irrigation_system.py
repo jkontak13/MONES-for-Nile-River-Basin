@@ -32,19 +32,12 @@ determine_info():
 class IrrigationSystem(Facility):
 
     def __init__(
-        self,
-        name: str,
-        demand: list[float],
-        objective_function,
-        objective_name: str,
+        self, name: str, demand: list[float], objective_function, objective_name: str, timestep: int = 0
     ) -> None:
-        super().__init__(name)
+        super().__init__(name, objective_function, objective_name, timestep)
         self.demand = demand
         self.total_deficit = 0
-        self.months: int = 0
         self.list_deficits: list[float] = []
-        self.objective_function = objective_function
-        self.objective_name = objective_name
 
     """
     Calculates the reward (irrigation deficit) given the values of its attributes 
@@ -57,7 +50,7 @@ class IrrigationSystem(Facility):
 
     def determine_deficit(self) -> float:
         consumption = self.determine_consumption()
-        deficit = self.demand[self.months] - consumption
+        deficit = self.demand[self.timestep] - consumption
         self.total_deficit += deficit
         self.list_deficits.append(deficit)
         return deficit
@@ -72,7 +65,7 @@ class IrrigationSystem(Facility):
         float
             Reward for the objective function.
         """
-        return self.objective_function(self.demand[self.months], self.determine_consumption())
+        return self.objective_function(self.demand[self.timestep], self.determine_consumption())
 
     """
     Determines how much water is consumed by the irrigation system
@@ -84,7 +77,7 @@ class IrrigationSystem(Facility):
     """
 
     def determine_consumption(self) -> float:
-        return min(self.demand[self.months], self.inflow)
+        return min(self.demand[self.timestep], self.inflow)
 
     """
     Determines info of irrigation system
@@ -92,7 +85,7 @@ class IrrigationSystem(Facility):
     Returns:
     ----------
     dict
-        Info about irrigation system (name, name, inflow, outflow, demand, months, deficit)
+        Info about irrigation system (name, name, inflow, outflow, demand, timestep, deficit)
     """
 
     def determine_info(self) -> dict:
@@ -101,16 +94,17 @@ class IrrigationSystem(Facility):
             "inflow": self.inflow,
             "outflow": self.outflow,
             "demand": self.demand,
-            "months": self.months,
+            "timestep": self.timestep,
             "total_deficit": self.total_deficit,
             "list_deficits": self.list_deficits,
         }
 
     def step(self) -> Tuple[ObsType, float, bool, bool, dict]:
+        # Increment the timestep
+        self.timestep += 1
+
         # Get info and reward with the OLD month value
         info = self.determine_info()
         reward = self.determine_reward()
 
-        # Increment the timestep
-        self.months += 1
         return None, reward, False, False, info

@@ -6,8 +6,11 @@ from core.models.objective import Objective
 
 
 class Facility(ABC):
-    def __init__(self, name: str, objective_function=Objective.no_objective, objective_name: str = "") -> None:
+    def __init__(
+        self, name: str, objective_function=Objective.no_objective, objective_name: str = "", timestep: int = 0
+    ) -> None:
         self.name: str = name
+        self.timestep: int = timestep
         self.inflow: float = 0
         self.outflow: float = 0
 
@@ -27,6 +30,7 @@ class Facility(ABC):
         raise NotImplementedError()
 
     def step(self) -> Tuple[ObsType, float, bool, bool, dict]:
+        self.timestep += 1
         self.outflow = self.inflow - self.determine_consumption()
         # TODO: Determine if we need to satisy any terminating codnitions for facility.
         terminated = False
@@ -42,9 +46,11 @@ class ControlledFacility(ABC):
         action_space: ActType,
         objective_function=Objective.no_objective,
         objective_name: str = "",
+        timestep: int = 0,
         max_capacity: float = float("Inf"),
     ) -> None:
         self.name: str = name
+        self.timestep = timestep
         self.inflow: float = 0
         self.outflow: float = 0
 
@@ -77,6 +83,7 @@ class ControlledFacility(ABC):
         raise NotImplementedError()
 
     def step(self, action: ActType) -> Tuple[ObsType, SupportsFloat, bool, bool, dict]:
+        self.timestep += 1
         self.outflow = self.determine_outflow(action)
         # TODO: Change stored_water to multiple outflows.
 
