@@ -16,7 +16,7 @@ class Dam(ControlledFacility):
 
     Attributes
     ----------
-    id: str
+    name: str
         Lowercase non-spaced name of the reservoir
     storage_vector: np.array (1xH)
         m3
@@ -56,7 +56,7 @@ class Dam(ControlledFacility):
 
     def __init__(
         self,
-        id: str,
+        name: str,
         observation_space: Space,
         action_space: Box,
         objective_function,
@@ -64,13 +64,13 @@ class Dam(ControlledFacility):
         max_capacity: float = float("Inf"),
         stored_water: float = 0,
     ) -> None:
-        super().__init__(id, observation_space, action_space, max_capacity)
+        super().__init__(name, observation_space, action_space, max_capacity)
         self.stored_water: float = stored_water
 
-        self.evap_rates = np.loadtxt(data_directory / f"evap_{id}.txt")
-        self.storage_to_minmax_rel = np.loadtxt(data_directory / f"store_min_max_release_{id}.txt")
-        self.storage_to_level_rel = np.loadtxt(data_directory / f"store_level_rel_{id}.txt")
-        self.storage_to_surface_rel = np.loadtxt(data_directory / f"store_sur_rel_{id}.txt")
+        self.evap_rates = np.loadtxt(data_directory / f"evap_{name}.txt")
+        self.storage_to_minmax_rel = np.loadtxt(data_directory / f"store_min_max_release_{name}.txt")
+        self.storage_to_level_rel = np.loadtxt(data_directory / f"store_level_rel_{name}.txt")
+        self.storage_to_surface_rel = np.loadtxt(data_directory / f"store_sur_rel_{name}.txt")
 
         self.storage_vector = array("f", [])
         self.level_vector = array("f", [])
@@ -127,7 +127,7 @@ class Dam(ControlledFacility):
 
     def determine_info(self) -> dict:
         info = {
-            "id": self.id,
+            "name": self.name,
             "stored_water": self.stored_water,
             "current_level": self.level_vector[-1] if self.level_vector else None,
             "current_release": self.release_vector[-1] if self.release_vector else None,

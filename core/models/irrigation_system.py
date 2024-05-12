@@ -8,7 +8,7 @@ Class to represent Irrigation System
 
 Attributes:
 ----------
-id : str
+name : str
     identifier
 demand : float
    The list of monthly demand of the irrigation system 
@@ -33,12 +33,12 @@ class IrrigationSystem(Facility):
 
     def __init__(
         self,
-        id: str,
+        name: str,
         demand: list[float],
         objective_function,
         objective_name: str,
     ) -> None:
-        super().__init__(id)
+        super().__init__(name)
         self.demand = demand
         self.total_deficit = 0
         self.months: int = 0
@@ -92,12 +92,12 @@ class IrrigationSystem(Facility):
     Returns:
     ----------
     dict
-        Info about irrigation system (id, name, inflow, outflow, demand, months, deficit)
+        Info about irrigation system (name, name, inflow, outflow, demand, months, deficit)
     """
 
     def determine_info(self) -> dict:
         return {
-            "id": self.id,
+            "name": self.name,
             "inflow": self.inflow,
             "outflow": self.outflow,
             "demand": self.demand,

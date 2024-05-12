@@ -8,12 +8,12 @@ from core.models.facility import Facility, ControlledFacility
 class Flow:
     def __init__(
         self,
-        id: str,
+        name: str,
         sources: List[Union[Facility, ControlledFacility]],
         destination: Optional[Union[Facility, ControlledFacility]],
         max_capacity: float,
     ) -> None:
-        self.id: str = id
+        self.name: str = name
         self.sources: List[Union[Facility, ControlledFacility]] = sources
         self.destination: Union[Facility, ControlledFacility] = destination
         self.max_capacity: float = max_capacity
@@ -38,9 +38,9 @@ class Flow:
 
 class Inflow(Flow):
     def __init__(
-        self, id: str, destination: Union[Facility, ControlledFacility], max_capacity: float, inflow: float
+        self, name: str, destination: Union[Facility, ControlledFacility], max_capacity: float, inflow: float
     ) -> None:
-        super().__init__(id, None, destination, max_capacity)
+        super().__init__(name, None, destination, max_capacity)
         self.inflow: float = inflow
 
     def determine_source_outflow(self) -> float:
@@ -48,8 +48,8 @@ class Inflow(Flow):
 
 
 class Outflow(Flow):
-    def __init__(self, id: str, sources: List[Union[Facility, ControlledFacility]], max_capacity: float) -> None:
-        super().__init__(id, sources, None, max_capacity)
+    def __init__(self, name: str, sources: List[Union[Facility, ControlledFacility]], max_capacity: float) -> None:
+        super().__init__(name, sources, None, max_capacity)
 
     def set_destination_inflow(self) -> None:
         pass

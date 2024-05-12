@@ -3,8 +3,8 @@ from core.models.facility import Facility
 
 class Catchment(Facility):
 
-    def __init__(self, id: str, water_accumulated: float) -> None:
-        super().__init__(id)
+    def __init__(self, name: str, water_accumulated: float) -> None:
+        super().__init__(name)
         self.water_accumulated: float = water_accumulated
 
     def determine_reward(self) -> float:

@@ -7,7 +7,7 @@ Class to represent Hydro-energy Powerplant
 
 Attributes:
 ----------
-id : str
+name : str
     identifier
 efficiency : float
     Efficiency coefficient (mu) used in hydropower formula
@@ -36,12 +36,10 @@ determine_consumption():
 determine_info():
     Returns info about the hydro-energy powerplant
 """
-
-
 class PowerPlant(Facility):
     def __init__(
         self,
-        id: str,
+        name: str,
         efficiency: float,
         max_turbine_flow: float,
         head_start_level: float,
@@ -54,7 +52,7 @@ class PowerPlant(Facility):
         # TODO: determine actual water usage for power plants, 0.0 for ease now
         water_usage: float = 0.0,
     ) -> None:
-        super().__init__(id)
+        super().__init__(name)
         self.efficiency = efficiency
         self.max_turbine_flow = max_turbine_flow
         self.head_start_level = head_start_level
@@ -152,12 +150,12 @@ class PowerPlant(Facility):
     Returns:
     ----------
     dict
-        Info about power plant (id, inflow, outflow, water usage, months, total production)
+        Info about power plant (name, inflow, outflow, water usage, months, total production)
     """
 
     def determine_info(self) -> dict:
         return {
-            "id": self.id,
+            "name": self.name,
             "inflow": self.inflow,
             "outflow": self.outflow,
             "water_usage": self.water_usage,
