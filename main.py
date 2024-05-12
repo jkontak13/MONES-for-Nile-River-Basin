@@ -44,11 +44,12 @@ def nile_river_simulation(nu_of_timesteps=3):
             irrigation_system_outflow,
         ],
         rewards={"ethiopia_power": 0, "egypt_deficit": 0, "min_HAD": 0},
+        step_limit=12 * 20,
         seed=2137,
     )
 
     # Simulate for 3 timestamps (3 months).
-    for t in range(nu_of_timesteps):
+    for _ in range(nu_of_timesteps):
         action = water_management_system.action_space.sample()
         print("Action:", action)
         final_observation, final_reward, final_terminated, final_truncated, final_info = water_management_system.step(
