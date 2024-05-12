@@ -1,8 +1,6 @@
 from typing import Optional, List, Union, Tuple
 from core.models.facility import Facility, ControlledFacility
-from typing import Optional, Union, Tuple
 from gymnasium.core import ObsType
-from core.models.facility import Facility, ControlledFacility
 
 
 class Flow:
@@ -45,14 +43,14 @@ class Inflow(Flow):
         name: str,
         destination: Union[Facility, ControlledFacility],
         max_capacity: float,
-        inflow: float,
+        inflow: List[float],
         timestep: int = 0,
     ) -> None:
         super().__init__(name, None, destination, max_capacity, timestep)
         self.inflow: float = inflow
 
     def determine_source_outflow(self) -> float:
-        return self.inflow
+        return self.inflow[self.timestep]
 
 
 class Outflow(Flow):

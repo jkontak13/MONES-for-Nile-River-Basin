@@ -12,7 +12,7 @@ class Catchment(Facility):
         return 0
 
     def determine_consumption(self) -> float:
-        return -self.water_accumulated
+        return -self.water_accumulated[self.timestep]
 
     def determine_info(self) -> dict:
-        return {"water_accumulated": self.water_accumulated, "timestep": self.timestep}
+        return {"water_consumption": self.determine_consumption(), "timestep": self.timestep}
