@@ -24,6 +24,9 @@ class Flow:
     def set_destination_inflow(self) -> None:
         self.destination.inflow = self.determine_source_outflow()
 
+    def is_truncated(self) -> bool:
+        return False
+
     def determine_info(self) -> dict:
         return {"flow": self.determine_source_outflow()}
 
@@ -31,7 +34,7 @@ class Flow:
         self.set_destination_inflow()
 
         terminated = self.determine_source_outflow() > self.max_capacity
-        truncated = False
+        truncated = self.is_truncated()
         reward = float("-inf") if terminated else 0.0
         info = self.determine_info()
 
@@ -46,14 +49,17 @@ class Inflow(Flow):
         name: str,
         destination: Union[Facility, ControlledFacility],
         max_capacity: float,
-        inflow: List[float],
+        all_inflow: List[float],
         timestep: int = 0,
     ) -> None:
         super().__init__(name, None, destination, max_capacity, timestep)
-        self.inflow: List[float] = inflow
+        self.all_inflow: List[float] = all_inflow
 
     def determine_source_outflow(self) -> float:
-        return self.inflow[self.timestep]
+        return self.all_inflow[self.timestep % len(self.all_inflow)]
+
+    def is_truncated(self) -> bool:
+        return self.timestep >= len(self.all_inflow)
 
 
 class Outflow(Flow):
