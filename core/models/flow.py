@@ -58,7 +58,11 @@ class Inflow(Flow):
 
 class Outflow(Flow):
     def __init__(
-        self, name: str, sources: List[Union[Facility, ControlledFacility]], max_capacity: float, timestep: int = 0
+        self,
+        name: str,
+        sources: List[Union[Facility, ControlledFacility]],
+        max_capacity: float,
+        timestep: int = 0,
     ) -> None:
         super().__init__(name, sources, None, max_capacity, timestep)
 

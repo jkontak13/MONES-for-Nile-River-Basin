@@ -1,4 +1,5 @@
 from core.models.facility import Facility
+from typing import List
 
 
 class IrrigationSystem(Facility):
@@ -28,12 +29,17 @@ class IrrigationSystem(Facility):
     """
 
     def __init__(
-        self, name: str, demand: list[float], objective_function, objective_name: str, timestep: int = 0
+        self,
+        name: str,
+        demand: List[float],
+        objective_function,
+        objective_name: str,
+        timestep: int = 0,
     ) -> None:
         super().__init__(name, objective_function, objective_name, timestep)
         self.demand = demand
         self.total_deficit = 0
-        self.list_deficits: list[float] = []
+        self.list_deficits: List[float] = []
 
     def determine_deficit(self) -> float:
         """
@@ -60,7 +66,9 @@ class IrrigationSystem(Facility):
         float
             Reward for the objective function.
         """
-        return self.objective_function(self.demand[self.timestep], self.determine_consumption())
+        return self.objective_function(
+            self.demand[self.timestep], self.determine_consumption()
+        )
 
     def determine_consumption(self) -> float:
         """

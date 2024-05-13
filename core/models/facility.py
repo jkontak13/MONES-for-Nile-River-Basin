@@ -7,7 +7,11 @@ from core.models.objective import Objective
 
 class Facility(ABC):
     def __init__(
-        self, name: str, objective_function=Objective.no_objective, objective_name: str = "", timestep: int = 0
+        self,
+        name: str,
+        objective_function=Objective.no_objective,
+        objective_name: str = "",
+        timestep: int = 0,
     ) -> None:
         self.name: str = name
         self.timestep: int = timestep
