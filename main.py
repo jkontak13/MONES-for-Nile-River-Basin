@@ -9,6 +9,7 @@ from core.models.flow import Flow, Outflow, Inflow
 from core.models.objective import Objective
 from core.models.power_plant import PowerPlant
 from core.models.irrigation_system import IrrigationSystem
+from core.models.catchment import Catchment
 
 
 def nile_river_simulation(nu_of_timesteps=3):
@@ -127,52 +128,41 @@ def nile_river_simulation(nu_of_timesteps=3):
         "gezira_received_flow", [Sennar_dam], Gezira_irr_system, float("inf")
     )
 
-    Dinder_inflow = Inflow(
-        "dinder_inflow",
-        DSSennar_irr_system,
-        float("inf"),
-        np.loadtxt(data_directory / "catchments" / "dinder.txt"),
+    Dinder_catchment = Catchment(
+        "dinder_catchment", np.loadtxt(data_directory / "catchments" / "dinder.txt")
     )
 
-    Rahad_inflow = Inflow(
-        "rahad_inflow",
-        DSSennar_irr_system,
-        float("inf"),
-        np.loadtxt(data_directory / "catchments" / "rahad.txt"),
+    Rahad_catchment = Catchment(
+        "rahad_catchment", np.loadtxt(data_directory / "catchments" / "rahad.txt")
     )
 
     downstream_Sennar_received_flow = Flow(
         "downstream_sennar_received_flow",
-        [Gezira_irr_system],
+        [Gezira_irr_system, Dinder_catchment, Rahad_catchment],
         DSSennar_irr_system,
         float("inf"),
     )
 
-    WhiteNile_inflow = Inflow(
-        "whitenile_inflow",
-        Tamaniat_irr_system,
-        float("inf"),
+    WhiteNile_catchment = Catchment(
+        "whitenile_catchment",
         np.loadtxt(data_directory / "catchments" / "white-nile.txt"),
     )
 
     Taminiat_received_flow = Flow(
         "taminiat_received_flow",
-        [DSSennar_irr_system],
+        [DSSennar_irr_system, WhiteNile_catchment],
         Tamaniat_irr_system,
         float("inf"),
     )
 
-    Atbara_inflow = Inflow(
-        "atbara_inflow",
-        Hassanab_irr_system,
-        float("inf"),
-        np.loadtxt(data_directory / "catchments" / "atbara.txt"),
+    Atbara_catchment = Catchment(
+        "atbara_catchment", np.loadtxt(data_directory / "catchments" / "atbara.txt")
     )
 
-    # TODO: chane Hassanab received flow to depend on leftover flow from Taminiat in previous month (see A.2.8)
+    # TODO: change Hassanab received flow to depend on leftover flow from Taminiat in previous month (see A.2.8)
     Hassanab_received_flow = Flow(
         "hassanab_received_flow",
-        [Tamaniat_irr_system],
+        [Tamaniat_irr_system, Atbara_catchment],
         Hassanab_irr_system,
         float("inf"),
     )
@@ -201,12 +191,12 @@ def nile_river_simulation(nu_of_timesteps=3):
             upstream_Sennar_received_flow,
             Sennar_flow,
             Gezira_received_flow,
-            Dinder_inflow,
-            Rahad_inflow,
+            Dinder_catchment,
+            Rahad_catchment,
             downstream_Sennar_received_flow,
-            WhiteNile_inflow,
+            WhiteNile_catchment,
             Taminiat_received_flow,
-            Atbara_inflow,
+            Atbara_catchment,
             Hassanab_received_flow,
             HAD_flow,
             Egypt_flow,
