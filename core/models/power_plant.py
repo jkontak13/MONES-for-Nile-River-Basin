@@ -1,4 +1,5 @@
 from core.models.facility import Facility
+from core.models.dam import Dam
 
 
 class PowerPlant(Facility):
@@ -46,7 +47,7 @@ class PowerPlant(Facility):
         max_turbine_flow: float,
         head_start_level: float,
         max_capacity: float,
-        water_level_coeff: float,
+        dam: Dam = None,
         # TODO: find out if operating hours for power plants differ
         operating_hours: float = 24 * 30,
         # TODO: determine actual water usage for power plants, 0.0 for ease now
@@ -58,7 +59,7 @@ class PowerPlant(Facility):
         self.max_turbine_flow = max_turbine_flow
         self.head_start_level = head_start_level
         self.max_capacity = max_capacity
-        self.water_level_coeff = water_level_coeff
+        self.dam = dam
         self.operating_hours = operating_hours
         self.water_usage = water_usage
         self.production_sum = 0
@@ -88,17 +89,22 @@ class PowerPlant(Facility):
             Plant's power production in mWh
         """
         # Turbine flow is equal to outflow, as long as it does not exceed maximum turbine flow
-        turbine_flow = min(self.outflow, self.max_turbine_flow)
+        turbine_flow = min(self.dam.outflow, self.max_turbine_flow)
 
-        # Uses water level coeff to calculate at what level the outflow will flow
-        water_level = self.outflow * self.water_level_coeff
+        # Uses water level from dam to determine water level
+        water_level = self.dam.level_vector[-1] if self.dam.level_vector else 0
         # Calculate at what level the head will generate power, using water_level of the outflow and head_start_level
         head = max(0.0, water_level - self.head_start_level)
 
         # Calculate power in mW, has to be lower than or equal to capacity
         power_in_mw = min(
             self.max_capacity,
-            turbine_flow * head * m3_to_kg_factor * g * self.efficiency * w_mw_conversion,
+            turbine_flow
+            * head
+            * m3_to_kg_factor
+            * g
+            * self.efficiency
+            * w_mw_conversion,
         )
 
         # Hydro-energy power production in mWh
