@@ -28,10 +28,8 @@ class IrrigationSystem(Facility):
         Returns info about the irrigation sustem
     """
 
-    def __init__(
-        self, name: str, all_demand: List[float], objective_function, objective_name: str, timestep: int = 0
-    ) -> None:
-        super().__init__(name, objective_function, objective_name, timestep)
+    def __init__(self, name: str, all_demand: List[float], objective_function, objective_name: str) -> None:
+        super().__init__(name, objective_function, objective_name)
         self.all_demand: List[float] = all_demand
         self.total_deficit = 0
         self.all_deficit: List[float] = []
@@ -94,7 +92,6 @@ class IrrigationSystem(Facility):
             "inflow": self.inflow,
             "outflow": self.outflow,
             "demand": self.get_current_demand(),
-            "timestep": self.timestep,
             "total_deficit": self.total_deficit,
             "list_deficits": self.all_deficit,
         }

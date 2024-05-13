@@ -6,11 +6,9 @@ from core.models.objective import Objective
 
 
 class Facility(ABC):
-    def __init__(
-        self, name: str, objective_function=Objective.no_objective, objective_name: str = "", timestep: int = 0
-    ) -> None:
+    def __init__(self, name: str, objective_function=Objective.no_objective, objective_name: str = "") -> None:
         self.name: str = name
-        self.timestep: int = timestep
+        self.timestep: int = 0
         self.inflow: float = 0
         self.outflow: float = 0
 
@@ -56,11 +54,10 @@ class ControlledFacility(ABC):
         action_space: ActType,
         objective_function=Objective.no_objective,
         objective_name: str = "",
-        timestep: int = 0,
         max_capacity: float = float("Inf"),
     ) -> None:
         self.name: str = name
-        self.timestep = timestep
+        self.timestep: int = 0
         self.inflow: float = 0
         self.outflow: float = 0
 

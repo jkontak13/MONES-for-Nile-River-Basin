@@ -4,8 +4,8 @@ from typing import List
 
 class Catchment(Facility):
 
-    def __init__(self, name: str, all_water_accumulated: List[float], timestep: int = 0) -> None:
-        super().__init__(name, timestep=timestep)
+    def __init__(self, name: str, all_water_accumulated: List[float]) -> None:
+        super().__init__(name)
         self.all_water_accumulated: List[float] = all_water_accumulated
 
     def determine_reward(self) -> float:
@@ -18,4 +18,6 @@ class Catchment(Facility):
         return self.timestep >= len(self.all_water_accumulated)
 
     def determine_info(self) -> dict:
-        return {"water_consumption": self.determine_consumption(), "timestep": self.timestep}
+        return {
+            "water_consumption": self.determine_consumption()
+        }

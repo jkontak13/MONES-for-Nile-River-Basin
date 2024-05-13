@@ -10,13 +10,12 @@ class Flow:
         sources: List[Union[Facility, ControlledFacility]],
         destination: Optional[Union[Facility, ControlledFacility]],
         max_capacity: float,
-        timestep: int = 0,
     ) -> None:
         self.name: str = name
         self.sources: List[Union[Facility, ControlledFacility]] = sources
         self.destination: Union[Facility, ControlledFacility] = destination
         self.max_capacity: float = max_capacity
-        self.timestep = timestep
+        self.timestep = 0
 
     def determine_source_outflow(self) -> float:
         return sum(source.outflow for source in self.sources)
@@ -28,7 +27,10 @@ class Flow:
         return False
 
     def determine_info(self) -> dict:
-        return {"flow": self.determine_source_outflow()}
+        return {
+            "name": self.name,
+            "flow": self.determine_source_outflow()
+        }
 
     def step(self) -> Tuple[Optional[ObsType], float, bool, bool, dict]:
         self.set_destination_inflow()
@@ -50,9 +52,8 @@ class Inflow(Flow):
         destination: Union[Facility, ControlledFacility],
         max_capacity: float,
         all_inflow: List[float],
-        timestep: int = 0,
     ) -> None:
-        super().__init__(name, None, destination, max_capacity, timestep)
+        super().__init__(name, None, destination, max_capacity)
         self.all_inflow: List[float] = all_inflow
 
     def determine_source_outflow(self) -> float:
@@ -63,10 +64,8 @@ class Inflow(Flow):
 
 
 class Outflow(Flow):
-    def __init__(
-        self, name: str, sources: List[Union[Facility, ControlledFacility]], max_capacity: float, timestep: int = 0
-    ) -> None:
-        super().__init__(name, sources, None, max_capacity, timestep)
+    def __init__(self, name: str, sources: List[Union[Facility, ControlledFacility]], max_capacity: float) -> None:
+        super().__init__(name, sources, None, max_capacity)
 
     def set_destination_inflow(self) -> None:
         pass
