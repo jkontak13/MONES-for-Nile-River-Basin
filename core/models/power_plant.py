@@ -50,7 +50,7 @@ class PowerPlant(Facility):
         # TODO: find out if operating hours for power plants differ
         operating_hours: float = 24 * 30,
         # TODO: determine actual water usage for power plants, 0.0 for ease now
-        water_usage: float = 0.0
+        water_usage: float = 0.0,
     ) -> None:
         super().__init__(name, objective_function, objective_name)
         self.efficiency = efficiency

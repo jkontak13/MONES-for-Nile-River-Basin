@@ -18,6 +18,4 @@ class Catchment(Facility):
         return self.timestep >= len(self.all_water_accumulated)
 
     def determine_info(self) -> dict:
-        return {
-            "water_consumption": self.determine_consumption()
-        }
+        return {"water_consumption": self.determine_consumption()}

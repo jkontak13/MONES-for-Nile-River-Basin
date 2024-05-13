@@ -27,10 +27,7 @@ class Flow:
         return False
 
     def determine_info(self) -> dict:
-        return {
-            "name": self.name,
-            "flow": self.determine_source_outflow()
-        }
+        return {"name": self.name, "flow": self.determine_source_outflow()}
 
     def step(self) -> Tuple[Optional[ObsType], float, bool, bool, dict]:
         self.set_destination_inflow()
