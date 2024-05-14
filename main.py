@@ -124,17 +124,11 @@ def nile_river_simulation(nu_of_timesteps=3):
     # TODO: add catchment 3 inflow to sources of Sennar (inflow with destination USSennar)
     Sennar_flow = Flow("sennar_flow", [USSennar_irr_system], Sennar_dam, float("inf"))
 
-    Gezira_received_flow = Flow(
-        "gezira_received_flow", [Sennar_dam], Gezira_irr_system, float("inf")
-    )
+    Gezira_received_flow = Flow("gezira_received_flow", [Sennar_dam], Gezira_irr_system, float("inf"))
 
-    Dinder_catchment = Catchment(
-        "dinder_catchment", np.loadtxt(data_directory / "catchments" / "dinder.txt")
-    )
+    Dinder_catchment = Catchment("dinder_catchment", np.loadtxt(data_directory / "catchments" / "dinder.txt"))
 
-    Rahad_catchment = Catchment(
-        "rahad_catchment", np.loadtxt(data_directory / "catchments" / "rahad.txt")
-    )
+    Rahad_catchment = Catchment("rahad_catchment", np.loadtxt(data_directory / "catchments" / "rahad.txt"))
 
     downstream_Sennar_received_flow = Flow(
         "downstream_sennar_received_flow",
@@ -155,9 +149,7 @@ def nile_river_simulation(nu_of_timesteps=3):
         float("inf"),
     )
 
-    Atbara_catchment = Catchment(
-        "atbara_catchment", np.loadtxt(data_directory / "catchments" / "atbara.txt")
-    )
+    Atbara_catchment = Catchment("atbara_catchment", np.loadtxt(data_directory / "catchments" / "atbara.txt"))
 
     # TODO: change Hassanab received flow to depend on leftover flow from Taminiat in previous month (see A.2.8)
     Hassanab_received_flow = Flow(

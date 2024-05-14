@@ -68,15 +68,9 @@ class Dam(ControlledFacility):
         self.stored_water: float = stored_water
 
         self.evap_rates = np.loadtxt(dam_data_directory / f"evap_{name}.txt")
-        self.storage_to_minmax_rel = np.loadtxt(
-            dam_data_directory / f"store_min_max_release_{name}.txt"
-        )
-        self.storage_to_level_rel = np.loadtxt(
-            dam_data_directory / f"store_level_rel_{name}.txt"
-        )
-        self.storage_to_surface_rel = np.loadtxt(
-            dam_data_directory / f"store_sur_rel_{name}.txt"
-        )
+        self.storage_to_minmax_rel = np.loadtxt(dam_data_directory / f"store_min_max_release_{name}.txt")
+        self.storage_to_level_rel = np.loadtxt(dam_data_directory / f"store_level_rel_{name}.txt")
+        self.storage_to_surface_rel = np.loadtxt(dam_data_directory / f"store_sur_rel_{name}.txt")
 
         self.storage_vector = array("f", [])
         self.level_vector = array("f", [])
@@ -149,14 +143,10 @@ class Dam(ControlledFacility):
         return self.timestep % 12
 
     def storage_to_level(self, s: float) -> float:
-        return self.modified_interp(
-            s, self.storage_to_level_rel[0], self.storage_to_level_rel[1]
-        )
+        return self.modified_interp(s, self.storage_to_level_rel[0], self.storage_to_level_rel[1])
 
     def storage_to_surface(self, s: float) -> float:
-        return self.modified_interp(
-            s, self.storage_to_surface_rel[0], self.storage_to_surface_rel[1]
-        )
+        return self.modified_interp(s, self.storage_to_surface_rel[0], self.storage_to_surface_rel[1])
 
     def storage_to_minmax(self, s: float) -> Tuple[float, float]:
         # For minimum release constraint, we regard the data points as a step function
@@ -166,9 +156,7 @@ class Dam(ControlledFacility):
 
         minimum_index = max(bisect_right(self.storage_to_minmax_rel[0], s), 1)
         minimum_cons = self.storage_to_minmax_rel[1][minimum_index - 1]
-        maximum_cons = self.modified_interp(
-            s, self.storage_to_minmax_rel[0], self.storage_to_minmax_rel[2]
-        )
+        maximum_cons = self.modified_interp(s, self.storage_to_minmax_rel[0], self.storage_to_minmax_rel[2])
 
         return minimum_cons, maximum_cons
 
@@ -209,26 +197,18 @@ class Dam(ControlledFacility):
         for _ in np.arange(0, total_seconds, integ_step):
             surface = self.storage_to_surface(current_storage)
 
-            evaporation = surface * (
-                self.evap_rates[self.determine_month()] / (100 * integ_step_count)
-            )
+            evaporation = surface * (self.evap_rates[self.determine_month()] / (100 * integ_step_count))
             monthly_evap_total += evaporation
 
-            min_possible_release, max_possible_release = self.storage_to_minmax(
-                current_storage
-            )
+            min_possible_release, max_possible_release = self.storage_to_minmax(current_storage)
 
-            release_per_second = min(
-                max_possible_release, max(min_possible_release, release_action)
-            )
+            release_per_second = min(max_possible_release, max(min_possible_release, release_action))
 
             in_month_releases.append(release_per_second)
 
             total_addition = net_inflow_per_second * integ_step
 
-            current_storage += (
-                total_addition - evaporation - release_per_second * integ_step
-            )
+            current_storage += total_addition - evaporation - release_per_second * integ_step
 
         # Update the amount of water in the Dam
         self.storage_vector.append(current_storage)

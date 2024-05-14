@@ -66,9 +66,7 @@ class IrrigationSystem(Facility):
         float
             Reward for the objective function.
         """
-        return self.objective_function(
-            self.demand[self.timestep], self.determine_consumption()
-        )
+        return self.objective_function(self.demand[self.timestep], self.determine_consumption())
 
     def determine_consumption(self) -> float:
         """

@@ -13,9 +13,7 @@ class WaterManagementSystem(gym.Env):
         rewards: dict,
         seed=42,
     ) -> None:
-        self.water_systems: List[Union[Facility, ControlledFacility, Flow]] = (
-            water_systems
-        )
+        self.water_systems: List[Union[Facility, ControlledFacility, Flow]] = water_systems
         self.rewards = rewards
         self.seed: int = seed
 
@@ -46,9 +44,7 @@ class WaterManagementSystem(gym.Env):
         # TODO: decide on what we wnat to output in the info.
         return {"water_systems": self.water_systems}
 
-    def reset(
-        self, seed: Optional[int] = None, options: Optional[dict] = None
-    ) -> Tuple[ObsType, Dict[str, Any]]:
+    def reset(self, seed: Optional[int] = None, options: Optional[dict] = None) -> Tuple[ObsType, Dict[str, Any]]:
         # We need the following line to seed self.np_random.
         super().reset(seed=seed)
 
@@ -67,9 +63,7 @@ class WaterManagementSystem(gym.Env):
 
         for water_system in self.water_systems:
             if isinstance(water_system, ControlledFacility):
-                observation, reward, terminated, truncated, info = water_system.step(
-                    action[water_system.name]
-                )
+                observation, reward, terminated, truncated, info = water_system.step(action[water_system.name])
             elif isinstance(water_system, Facility) or isinstance(water_system, Flow):
                 observation, reward, terminated, truncated, info = water_system.step()
             else:
@@ -78,9 +72,7 @@ class WaterManagementSystem(gym.Env):
             # Set observation for a specific Facility.
             final_observation[water_system.name] = observation
             # Add reward to the objective assigned to this Facility (unless it is a Flow).
-            if isinstance(water_system, Facility) or isinstance(
-                water_system, ControlledFacility
-            ):
+            if isinstance(water_system, Facility) or isinstance(water_system, ControlledFacility):
                 final_reward[water_system.objective_name] += reward
             # Determine whether program should stop
             final_terminated = final_terminated or terminated
