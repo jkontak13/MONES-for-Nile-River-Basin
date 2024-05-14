@@ -41,31 +41,31 @@ def nile_river_simulation(nu_of_timesteps=3):
     # Sudan
     DSSennar_irr_system = IrrigationSystem(
         "DSSennar_irr",
-        np.loadtxt(data_directory / "dams" / "irr_demand_DSSennar.txt"),
+        np.loadtxt(data_directory / "irrigation" / "irr_demand_DSSennar.txt"),
         Objective.water_deficit_minimised,
         "sudan_deficit_minimised",
     )
     Gezira_irr_system = IrrigationSystem(
         "Gezira_irr",
-        np.loadtxt(data_directory / "dams" / "irr_demand_Gezira.txt"),
+        np.loadtxt(data_directory / "irrigation" / "irr_demand_Gezira.txt"),
         Objective.water_deficit_minimised,
         "sudan_deficit_minimised",
     )
     Hassanab_irr_system = IrrigationSystem(
         "Hassanab_irr",
-        np.loadtxt(data_directory / "dams" / "irr_demand_Hassanab.txt"),
+        np.loadtxt(data_directory / "irrigation" / "irr_demand_Hassanab.txt"),
         Objective.water_deficit_minimised,
         "sudan_deficit_minimised",
     )
     Tamaniat_irr_system = IrrigationSystem(
         "Tamaniat_irr",
-        np.loadtxt(data_directory / "dams" / "irr_demand_Tamaniat.txt"),
+        np.loadtxt(data_directory / "irrigation" / "irr_demand_Tamaniat.txt"),
         Objective.water_deficit_minimised,
         "sudan_deficit_minimised",
     )
     USSennar_irr_system = IrrigationSystem(
         "USSennar_irr",
-        np.loadtxt(data_directory / "dams" / "irr_demand_USSennar.txt"),
+        np.loadtxt(data_directory / "irrigation" / "irr_demand_USSennar.txt"),
         Objective.water_deficit_minimised,
         "sudan_deficit_minimised",
     )
@@ -87,7 +87,7 @@ def nile_river_simulation(nu_of_timesteps=3):
     # Egypt
     Egypt_irr_system = IrrigationSystem(
         "Egypt_irr",
-        np.loadtxt(data_directory / "dams" / "irr_demand_Egypt.txt"),
+        np.loadtxt(data_directory / "irrigation" / "irr_demand_Egypt.txt"),
         Objective.water_deficit_minimised,
         "egypt_deficit_minimised",
     )
