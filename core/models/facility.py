@@ -6,11 +6,9 @@ from core.models.objective import Objective
 
 
 class Facility(ABC):
-    def __init__(
-        self, name: str, objective_function=Objective.no_objective, objective_name: str = "", timestep: int = 0
-    ) -> None:
+    def __init__(self, name: str, objective_function=Objective.no_objective, objective_name: str = "") -> None:
         self.name: str = name
-        self.timestep: int = timestep
+        self.timestep: int = 0
         self.inflow: float = 0
         self.outflow: float = 0
 
@@ -29,12 +27,18 @@ class Facility(ABC):
     def determine_info(self) -> dict:
         raise NotImplementedError()
 
+    def is_terminated(self) -> bool:
+        return False
+
+    def is_truncated(self) -> bool:
+        return False
+
     def step(self) -> Tuple[ObsType, float, bool, bool, dict]:
         self.outflow = self.inflow - self.determine_consumption()
         # TODO: Determine if we need to satisy any terminating codnitions for facility.
         reward = self.determine_reward()
-        terminated = False
-        truncated = False
+        terminated = self.is_terminated()
+        truncated = self.is_truncated()
         info = self.determine_info()
 
         self.timestep += 1
@@ -50,11 +54,10 @@ class ControlledFacility(ABC):
         action_space: ActType,
         objective_function=Objective.no_objective,
         objective_name: str = "",
-        timestep: int = 0,
         max_capacity: float = float("Inf"),
     ) -> None:
         self.name: str = name
-        self.timestep = timestep
+        self.timestep: int = 0
         self.inflow: float = 0
         self.outflow: float = 0
 
@@ -86,6 +89,9 @@ class ControlledFacility(ABC):
     def is_terminated(self) -> bool:
         raise NotImplementedError()
 
+    def is_truncated(self) -> bool:
+        return False
+
     def step(self, action: ActType) -> Tuple[ObsType, SupportsFloat, bool, bool, dict]:
         self.outflow = self.determine_outflow(action)
         # TODO: Change stored_water to multiple outflows.
@@ -93,7 +99,7 @@ class ControlledFacility(ABC):
         observation = self.determine_observation()
         reward = self.determine_reward()
         terminated = self.is_terminated()
-        truncated = False
+        truncated = self.is_truncated()
         info = self.determine_info()
 
         self.timestep += 1

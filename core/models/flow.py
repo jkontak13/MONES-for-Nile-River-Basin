@@ -10,13 +10,12 @@ class Flow:
         sources: List[Union[Facility, ControlledFacility]],
         destination: Optional[Union[Facility, ControlledFacility]],
         max_capacity: float,
-        timestep: int = 0,
     ) -> None:
         self.name: str = name
         self.sources: List[Union[Facility, ControlledFacility]] = sources
         self.destination: Union[Facility, ControlledFacility] = destination
         self.max_capacity: float = max_capacity
-        self.timestep = timestep
+        self.timestep = 0
 
     def determine_source_outflow(self) -> float:
         return sum(source.outflow for source in self.sources)
@@ -24,14 +23,17 @@ class Flow:
     def set_destination_inflow(self) -> None:
         self.destination.inflow = self.determine_source_outflow()
 
+    def is_truncated(self) -> bool:
+        return False
+
     def determine_info(self) -> dict:
-        return {"flow": self.determine_source_outflow()}
+        return {"name": self.name, "flow": self.determine_source_outflow()}
 
     def step(self) -> Tuple[Optional[ObsType], float, bool, bool, dict]:
         self.set_destination_inflow()
 
         terminated = self.determine_source_outflow() > self.max_capacity
-        truncated = False
+        truncated = self.is_truncated()
         reward = float("-inf") if terminated else 0.0
         info = self.determine_info()
 
@@ -46,21 +48,21 @@ class Inflow(Flow):
         name: str,
         destination: Union[Facility, ControlledFacility],
         max_capacity: float,
-        inflow: List[float],
-        timestep: int = 0,
+        all_inflow: List[float],
     ) -> None:
-        super().__init__(name, None, destination, max_capacity, timestep)
-        self.inflow: List[float] = inflow
+        super().__init__(name, None, destination, max_capacity)
+        self.all_inflow: List[float] = all_inflow
 
     def determine_source_outflow(self) -> float:
-        return self.inflow[self.timestep]
+        return self.all_inflow[self.timestep % len(self.all_inflow)]
+
+    def is_truncated(self) -> bool:
+        return self.timestep >= len(self.all_inflow)
 
 
 class Outflow(Flow):
-    def __init__(
-        self, name: str, sources: List[Union[Facility, ControlledFacility]], max_capacity: float, timestep: int = 0
-    ) -> None:
-        super().__init__(name, sources, None, max_capacity, timestep)
+    def __init__(self, name: str, sources: List[Union[Facility, ControlledFacility]], max_capacity: float) -> None:
+        super().__init__(name, sources, None, max_capacity)
 
     def set_destination_inflow(self) -> None:
         pass

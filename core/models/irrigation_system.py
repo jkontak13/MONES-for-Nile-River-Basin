@@ -1,4 +1,5 @@
 from core.models.facility import Facility
+from typing import List
 
 
 class IrrigationSystem(Facility):
@@ -27,13 +28,14 @@ class IrrigationSystem(Facility):
         Returns info about the irrigation sustem
     """
 
-    def __init__(
-        self, name: str, demand: list[float], objective_function, objective_name: str, timestep: int = 0
-    ) -> None:
-        super().__init__(name, objective_function, objective_name, timestep)
-        self.demand = demand
+    def __init__(self, name: str, all_demand: List[float], objective_function, objective_name: str) -> None:
+        super().__init__(name, objective_function, objective_name)
+        self.all_demand: List[float] = all_demand
         self.total_deficit = 0
-        self.list_deficits: list[float] = []
+        self.all_deficit: List[float] = []
+
+    def get_current_demand(self) -> float:
+        return self.all_demand[self.timestep % len(self.all_demand)]
 
     def determine_deficit(self) -> float:
         """
@@ -45,9 +47,9 @@ class IrrigationSystem(Facility):
             Water deficit of the irrigation system
         """
         consumption = self.determine_consumption()
-        deficit = self.demand[self.timestep] - consumption
+        deficit = self.get_current_demand() - consumption
         self.total_deficit += deficit
-        self.list_deficits.append(deficit)
+        self.all_deficit.append(deficit)
         return deficit
 
     def determine_reward(self) -> float:
@@ -60,7 +62,7 @@ class IrrigationSystem(Facility):
         float
             Reward for the objective function.
         """
-        return self.objective_function(self.demand[self.timestep], self.determine_consumption())
+        return self.objective_function(self.get_current_demand(), self.determine_consumption())
 
     def determine_consumption(self) -> float:
         """
@@ -71,7 +73,10 @@ class IrrigationSystem(Facility):
         float
             Water consumption
         """
-        return min(self.demand[self.timestep], self.inflow)
+        return min(self.get_current_demand(), self.inflow)
+
+    def is_truncated(self) -> bool:
+        return self.timestep >= len(self.all_demand)
 
     def determine_info(self) -> dict:
         """
@@ -86,8 +91,7 @@ class IrrigationSystem(Facility):
             "name": self.name,
             "inflow": self.inflow,
             "outflow": self.outflow,
-            "demand": self.demand,
-            "timestep": self.timestep,
+            "demand": self.get_current_demand(),
             "total_deficit": self.total_deficit,
-            "list_deficits": self.list_deficits,
+            "list_deficits": self.all_deficit,
         }

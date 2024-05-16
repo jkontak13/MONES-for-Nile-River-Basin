@@ -15,7 +15,7 @@ def nile_river_simulation(nu_of_timesteps=3):
     # Create power plant, dam and irrigation system. Initialise with semi-random parameters.
     # Set objective functions to identity for power plant, minimum_water_level for dam and water_deficit_minimised
     # for irrigation system.
-    power_plant = PowerPlant("power-plant", Objective.identity, "ethiopia_power", 1000, 1000, 500, 0, 1)
+    power_plant = PowerPlant("power-plant", Objective.identity, "ethiopia_power", 1000, 1000, 500, 100000, 1)
     dam = Dam("GERD", Space(), Box(0, 1000), Objective.minimum_water_level, "min_HAD", stored_water=5100000000)
     irrigation_system = IrrigationSystem(
         "irrigation-system", [100, 50, 1000], Objective.water_deficit_minimised, "egypt_deficit"
@@ -44,11 +44,12 @@ def nile_river_simulation(nu_of_timesteps=3):
             irrigation_system_outflow,
         ],
         rewards={"ethiopia_power": 0, "egypt_deficit": 0, "min_HAD": 0},
+        step_limit=12 * 20,
         seed=2137,
     )
 
     # Simulate for 3 timestamps (3 months).
-    for t in range(nu_of_timesteps):
+    for _ in range(nu_of_timesteps):
         action = water_management_system.action_space.sample()
         print("Action:", action)
         final_observation, final_reward, final_terminated, final_truncated, final_info = water_management_system.step(
