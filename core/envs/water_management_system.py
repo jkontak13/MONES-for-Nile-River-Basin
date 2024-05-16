@@ -1,4 +1,5 @@
 import gymnasium as gym
+import numpy as np
 from gymnasium.spaces import Space, Dict
 from gymnasium.core import ObsType, RenderFrame
 from typing import Any, List, Union, Optional, Tuple
@@ -30,8 +31,7 @@ class WaterManagementSystem(gym.Env):
                 water_system.name: water_system.observation_space
                 for water_system in self.water_systems
                 if isinstance(water_system, ControlledFacility)
-            },
-            self.seed,
+            }
         )
 
     def _determine_action_space(self) -> Dict:
@@ -40,8 +40,7 @@ class WaterManagementSystem(gym.Env):
                 water_system.name: water_system.action_space
                 for water_system in self.water_systems
                 if isinstance(water_system, ControlledFacility)
-            },
-            self.seed,
+            }
         )
 
     def _is_truncated(self) -> bool:
@@ -58,7 +57,7 @@ class WaterManagementSystem(gym.Env):
         # TODO: Figure out the reset in facility
         # for water_system in self.water_systems:
         #     water_system.reset()
-
+        print(list(self._determine_observation_space().values()))
         return self._determine_observation_space(), self._determine_info()
 
     def step(self, action: Dict) -> Tuple[ObsType, list, bool, bool, dict]:
@@ -107,6 +106,6 @@ class WaterManagementSystem(gym.Env):
         # TODO: implement if needed, e.g. for closing opened rendering frames.
         pass
 
-    def render(self) -> RenderFrame | list[RenderFrame] | None:
+    def render(self) -> Union[RenderFrame, list[RenderFrame], None]:
         # TODO: implement if needed, for rendering simulation.
         pass
