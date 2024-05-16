@@ -5,7 +5,7 @@ from gymnasium import Space
 from gymnasium.spaces import Box
 from core.envs.water_management_system import WaterManagementSystem
 from core.models.dam import Dam
-from core.models.flow import Flow, Outflow, Inflow
+from core.models.flow import Flow, Inflow
 from core.models.objective import Objective
 from core.models.power_plant import PowerPlant
 from core.models.irrigation_system import IrrigationSystem
@@ -29,11 +29,11 @@ def nile_river_simulation(nu_of_timesteps=3):
         "GERD_power_plant",
         Objective.identity,
         "ethiopia_power",
-        0.93,  # efficieny
-        4320,  # max turbine flow
-        507,  # head start level
-        6000,  # max capacity
-        GERD_dam,
+        efficiency=0.93,
+        max_turbine_flow=4320,
+        head_start_level=507,
+        max_capacity=6000,
+        dam=GERD_dam,
     )
 
     data_directory = Path(__file__).parent / "core" / "data"
@@ -198,7 +198,6 @@ def nile_river_simulation(nu_of_timesteps=3):
             "sudan_deficit_minimised": 0,
             "egypt_deficit_minimised": 0,
             "HAD_minimum_water_level": 0,
-            "": 0,
         },
         seed=2137,
     )

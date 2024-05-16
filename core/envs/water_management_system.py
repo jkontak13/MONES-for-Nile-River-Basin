@@ -1,5 +1,5 @@
 import gymnasium as gym
-from gymnasium.spaces import Space, Dict as Dct
+from gymnasium.spaces import Space, Dict
 from gymnasium.core import ObsType, RenderFrame
 from typing import Any, List, Union, Optional, Tuple
 from core.models.flow import Flow
@@ -12,20 +12,19 @@ class WaterManagementSystem(gym.Env):
         water_systems: List[Union[Facility, ControlledFacility, Flow]],
         rewards: dict,
         step_limit: int = float("inf"),
-        timestep: int = 0,
         seed: int = 42,
     ) -> None:
         self.water_systems: List[Union[Facility, ControlledFacility, Flow]] = water_systems
         self.rewards = rewards
-        self.step_limit = step_limit
-        self.timestep = timestep
+        self.step_limit: int = step_limit
+        self.timestep: int = 0
         self.seed: int = seed
 
         self.observation_space: Space = self._determine_observation_space()
         self.action_space: Space = self._determine_action_space()
 
-    def _determine_observation_space(self) -> Dct:
-        return Dct(
+    def _determine_observation_space(self) -> Dict:
+        return Dict(
             {
                 water_system.name: water_system.observation_space
                 for water_system in self.water_systems
@@ -34,8 +33,8 @@ class WaterManagementSystem(gym.Env):
             self.seed,
         )
 
-    def _determine_action_space(self) -> Dct:
-        return Dct(
+    def _determine_action_space(self) -> Dict:
+        return Dict(
             {
                 water_system.name: water_system.action_space
                 for water_system in self.water_systems
@@ -51,7 +50,7 @@ class WaterManagementSystem(gym.Env):
         # TODO: decide on what we wnat to output in the info.
         return {"water_systems": self.water_systems}
 
-    def reset(self, seed: Optional[int] = None, options: Optional[dict] = None) -> Tuple[ObsType, Dict[str, Any]]:
+    def reset(self, seed: Optional[int] = None, options: Optional[dict] = None) -> Tuple[ObsType, dict[str, Any]]:
         # We need the following line to seed self.np_random.
         super().reset(seed=seed)
 
@@ -81,7 +80,8 @@ class WaterManagementSystem(gym.Env):
 
             # Add reward to the objective assigned to this Facility (unless it is a Flow).
             if isinstance(water_system, Facility) or isinstance(water_system, ControlledFacility):
-                final_reward[water_system.objective_name] += reward
+                if water_system.objective_name:
+                    final_reward[water_system.objective_name] += reward
 
             # Store additional information
             final_info[water_system.name] = info
