@@ -60,11 +60,10 @@ class Dam(ControlledFacility):
         action_space: Box,
         objective_function,
         objective_name: str = "",
-        timestep: int = 0,
         max_capacity: float = float("Inf"),
         stored_water: float = 0,
     ) -> None:
-        super().__init__(name, observation_space, action_space, timestep, max_capacity)
+        super().__init__(name, observation_space, action_space, max_capacity)
         self.stored_water: float = stored_water
 
         self.evap_rates = np.loadtxt(dam_data_directory / f"evap_{name}.txt")

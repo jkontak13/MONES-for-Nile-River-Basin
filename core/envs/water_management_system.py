@@ -1,7 +1,7 @@
 import gymnasium as gym
 from gymnasium.spaces import Space, Dict as Dct
 from gymnasium.core import ObsType, RenderFrame
-from typing import Any, List, Union, SupportsFloat, Optional, Tuple, Dict
+from typing import Any, List, Union, Optional, Tuple
 from core.models.flow import Flow
 from core.models.facility import Facility, ControlledFacility
 
@@ -11,10 +11,14 @@ class WaterManagementSystem(gym.Env):
         self,
         water_systems: List[Union[Facility, ControlledFacility, Flow]],
         rewards: dict,
-        seed=42,
+        step_limit: int = float("inf"),
+        timestep: int = 0,
+        seed: int = 42,
     ) -> None:
         self.water_systems: List[Union[Facility, ControlledFacility, Flow]] = water_systems
         self.rewards = rewards
+        self.step_limit = step_limit
+        self.timestep = timestep
         self.seed: int = seed
 
         self.observation_space: Space = self._determine_observation_space()
@@ -40,7 +44,10 @@ class WaterManagementSystem(gym.Env):
             self.seed,
         )
 
-    def _determine_info(self) -> Dict[str, Any]:
+    def _is_truncated(self) -> bool:
+        return self.timestep > self.step_limit
+
+    def _determine_info(self) -> dict[str, Any]:
         # TODO: decide on what we wnat to output in the info.
         return {"water_systems": self.water_systems}
 
@@ -54,7 +61,7 @@ class WaterManagementSystem(gym.Env):
 
         return self._determine_observation_space(), self._determine_info()
 
-    def step(self, action: Dct) -> Tuple[ObsType, list, bool, bool, dict]:
+    def step(self, action: Dict) -> Tuple[ObsType, list, bool, bool, dict]:
         final_observation = {}
         final_reward = self.rewards
         final_terminated = False
@@ -71,14 +78,22 @@ class WaterManagementSystem(gym.Env):
 
             # Set observation for a specific Facility.
             final_observation[water_system.name] = observation
+
             # Add reward to the objective assigned to this Facility (unless it is a Flow).
             if isinstance(water_system, Facility) or isinstance(water_system, ControlledFacility):
                 final_reward[water_system.objective_name] += reward
-            # Determine whether program should stop
-            final_terminated = final_terminated or terminated
-            final_truncated = final_truncated or truncated
+
             # Store additional information
             final_info[water_system.name] = info
+
+            # Determine whether program should stop
+            final_terminated = final_terminated or terminated
+            final_truncated = final_truncated or truncated or self._is_truncated()
+
+            if final_terminated or final_truncated:
+                break
+
+        self.timestep += 1
 
         return (
             list(final_observation.values()),
