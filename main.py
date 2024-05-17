@@ -1,6 +1,7 @@
+from collections import OrderedDict
+
 import numpy as np
 from pathlib import Path
-import pprint
 from gymnasium import Space
 from gymnasium.spaces import Box
 from core.envs.water_management_system import WaterManagementSystem
@@ -10,6 +11,7 @@ from core.models.objective import Objective
 from core.models.power_plant import PowerPlant
 from core.models.irrigation_system import IrrigationSystem
 from core.models.catchment import Catchment
+import csv
 
 
 def nile_river_simulation(nu_of_timesteps=3):
@@ -74,14 +76,14 @@ def nile_river_simulation(nu_of_timesteps=3):
         Space(),
         Box(0, 10000),
         Objective.no_objective,
-        stored_water=4570000000,
+        stored_water=4571250000.0,
     )
     Sennar_dam = Dam(
         "Sennar",
         Space(),
         Box(0, 10000),
         Objective.no_objective,
-        stored_water=430000000,
+        stored_water=434925000.0,
     )
 
     # Egypt
@@ -97,7 +99,7 @@ def nile_river_simulation(nu_of_timesteps=3):
         Box(0, 4000),
         Objective.minimum_water_level,
         "HAD_minimum_water_level",
-        stored_water=137000000000,
+        stored_water=137025000000.0,
     )
 
     # Create 'edges' between Facilities.
@@ -107,28 +109,36 @@ def nile_river_simulation(nu_of_timesteps=3):
         "gerd_inflow",
         GERD_dam,
         float("inf"),
-        np.loadtxt(data_directory / "catchments" / "blue-nile.txt"),
+        np.loadtxt(data_directory / "catchments" / "InflowBlueNile.txt"),
     )
 
+    GerdToRoseires_catchment = Catchment("GerdToRoseires_catchment", np.loadtxt(data_directory / "catchments" / "InflowGERDToRoseires.txt"))
+
+    RoseiresToAbuNaama_catchment = Catchment("RoseiresToAbuNaama_catchment",
+                                         np.loadtxt(data_directory / "catchments" / "InflowRoseiresToAbuNaama.txt"))
+
     # TODO: add catchment 1 inflow to sources of Roseires (inflow with destination Roseires)
-    Roseires_flow = Flow("roseires_flow", [GERD_dam], Roseires_dam, float("inf"))
+    Roseires_flow = Flow("roseires_flow", [GERD_dam, GerdToRoseires_catchment], Roseires_dam, float("inf"))
 
     # TODO: add catchment 2 inflow to sources of USSennar (inflow with destination USSennar)
     upstream_Sennar_received_flow = Flow(
         "upstream_Sennar_received_flow",
-        [Roseires_dam],
+        [Roseires_dam, RoseiresToAbuNaama_catchment],
         USSennar_irr_system,
         float("inf"),
     )
 
+    SukiToSennar_catchment = Catchment("SukiToSennar_catchment",
+                                       np.loadtxt(data_directory / "catchments" / "InflowSukiToSennar.txt"))
+
     # TODO: add catchment 3 inflow to sources of Sennar (inflow with destination USSennar)
-    Sennar_flow = Flow("sennar_flow", [USSennar_irr_system], Sennar_dam, float("inf"))
+    Sennar_flow = Flow("sennar_flow", [USSennar_irr_system, SukiToSennar_catchment], Sennar_dam, float("inf"))
 
     Gezira_received_flow = Flow("gezira_received_flow", [Sennar_dam], Gezira_irr_system, float("inf"))
 
-    Dinder_catchment = Catchment("dinder_catchment", np.loadtxt(data_directory / "catchments" / "dinder.txt"))
+    Dinder_catchment = Catchment("dinder_catchment", np.loadtxt(data_directory / "catchments" / "InflowDinder.txt"))
 
-    Rahad_catchment = Catchment("rahad_catchment", np.loadtxt(data_directory / "catchments" / "rahad.txt"))
+    Rahad_catchment = Catchment("rahad_catchment", np.loadtxt(data_directory / "catchments" / "InflowRahad.txt"))
 
     downstream_Sennar_received_flow = Flow(
         "downstream_sennar_received_flow",
@@ -139,7 +149,7 @@ def nile_river_simulation(nu_of_timesteps=3):
 
     WhiteNile_catchment = Catchment(
         "whitenile_catchment",
-        np.loadtxt(data_directory / "catchments" / "white-nile.txt"),
+        np.loadtxt(data_directory / "catchments" / "InflowWhiteNile.txt"),
     )
 
     Taminiat_received_flow = Flow(
@@ -149,7 +159,7 @@ def nile_river_simulation(nu_of_timesteps=3):
         float("inf"),
     )
 
-    Atbara_catchment = Catchment("atbara_catchment", np.loadtxt(data_directory / "catchments" / "atbara.txt"))
+    Atbara_catchment = Catchment("atbara_catchment", np.loadtxt(data_directory / "catchments" / "InflowAtbara.txt"))
 
     # TODO: change Hassanab received flow to depend on leftover flow from Taminiat in previous month (see A.2.8)
     Hassanab_received_flow = Flow(
@@ -201,22 +211,49 @@ def nile_river_simulation(nu_of_timesteps=3):
         },
         seed=2137,
     )
-
+    np.random.seed(42)
     # Simulate for 3 timestamps (3 months).
-    for _ in range(nu_of_timesteps):
-        action = water_management_system.action_space.sample()
-        print("Action:", action)
-        (
-            final_observation,
-            final_reward,
-            final_terminated,
-            final_truncated,
-            final_info,
-        ) = water_management_system.step(action)
-        print("Reward:", final_reward)
-        pprint.pprint(final_info)
-        print("Is finished:", final_truncated, final_terminated)
+    with open('group13.csv', 'w', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerow(
+            ['Year', 'Input', 'Gerd_storage', 'Gerd_release', 'Roseires_storage', 'Roseires_release', 'Sennar_storage',
+             'Sennar_release', 'Had_storage', 'Had_release', 'Gerd_production'])
+        for i in range(nu_of_timesteps):
+            rands, action = generateOutput()
+            (
+                final_observation,
+                final_reward,
+                final_terminated,
+                final_truncated,
+                final_info,
+            ) = water_management_system.step(action)
+            writer.writerow([i, rands,
+                             ensure_float(final_info.get("GERD")["stored_water"]),
+                             ensure_float(final_info.get("GERD")["current_release"]),
+                             ensure_float(final_info.get("Roseires")["stored_water"]),
+                             ensure_float(final_info.get("Roseires")["current_release"]),
+                             ensure_float(final_info.get("Sennar")["stored_water"]),
+                             ensure_float(final_info.get("Sennar")["current_release"]),
+                             ensure_float(final_info.get("HAD")["stored_water"]),
+                             ensure_float(final_info.get("HAD")["current_release"]),
+                             final_info.get("GERD_power_plant")["total production (MWh)"]])
 
+
+def generateOutput():
+    random_values = np.random.rand(4, ) * [10000, 4000, 10000, 10000]
+
+    # Step 2: Create an OrderedDict with the specified keys and values
+    return random_values, OrderedDict([
+        ('GERD', np.array([random_values[0]], dtype=np.float32)),
+        ('HAD', np.array([random_values[1]], dtype=np.float32)),
+        ('Roseires', np.array([random_values[2]], dtype=np.float32)),
+        ('Sennar', np.array([random_values[3]], dtype=np.float32))
+    ])
+
+def ensure_float(value):
+    if isinstance(value, np.ndarray):
+        return value.item()
+    return value
 
 if __name__ == "__main__":
-    nile_river_simulation()
+    nile_river_simulation(240)

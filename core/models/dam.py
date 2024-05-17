@@ -6,6 +6,7 @@ import numpy as np
 from numpy.core.multiarray import interp as compiled_interp
 from array import array
 from bisect import bisect_right
+import decimal
 
 dam_data_directory = Path(__file__).parents[1] / "data" / "dams"
 
@@ -71,10 +72,10 @@ class Dam(ControlledFacility):
         self.storage_to_level_rel = np.loadtxt(dam_data_directory / f"store_level_rel_{name}.txt")
         self.storage_to_surface_rel = np.loadtxt(dam_data_directory / f"store_sur_rel_{name}.txt")
 
-        self.storage_vector = array("f", [])
-        self.level_vector = array("f", [])
-        self.inflow_vector = array("f", [])
-        self.release_vector = array("f", [])
+        self.storage_vector = []
+        self.level_vector = []
+        self.inflow_vector = []
+        self.release_vector = []
 
         # Initialise storage vector
         self.storage_vector.append(stored_water)
@@ -147,17 +148,17 @@ class Dam(ControlledFacility):
     def storage_to_surface(self, s: float) -> float:
         return self.modified_interp(s, self.storage_to_surface_rel[0], self.storage_to_surface_rel[1])
 
-    def storage_to_minmax(self, s: float) -> Tuple[float, float]:
-        # For minimum release constraint, we regard the data points as a step function
-        # such that once a given storage/elevation is surpassed, we have to release a
-        # certain given amount. For maximum, we use interpolation as detailed discharge
-        # capacity calculations are made for certain points
+    def level_to_minmax(self, h):
+        return (
+            np.interp(h, self.rating_curve[0], self.rating_curve[1]),
+            np.interp(h, self.rating_curve[0], self.rating_curve[2]),
+        )
 
-        minimum_index = max(bisect_right(self.storage_to_minmax_rel[0], s), 1)
-        minimum_cons = self.storage_to_minmax_rel[1][minimum_index - 1]
-        maximum_cons = self.modified_interp(s, self.storage_to_minmax_rel[0], self.storage_to_minmax_rel[2])
-
-        return minimum_cons, maximum_cons
+    def storage_to_minmax(self, s):
+        return (
+            np.interp(s, self.storage_to_surface_rel[0], self.storage_to_surface_rel[1]),
+            np.interp(s, self.storage_to_surface_rel[0], self.storage_to_surface_rel[2]),
+        )
 
     def integration(
         self,
