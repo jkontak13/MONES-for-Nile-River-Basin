@@ -1,3 +1,4 @@
+import time
 from pprint import pprint
 
 import gymnasium as gym
@@ -28,14 +29,25 @@ class WaterManagementSystem(gym.Env):
         self.observation_space: Space = self._determine_observation_space()
         self.action_space: Space = self._determine_action_space()
 
+        self.observation: np.array = self._determine_observation()
+
         self.reward_space = gym.spaces.Box(-np.inf, np.inf, shape=(len(rewards.keys()),))
 
-    def _determine_observation_space(self) -> Dict:
+    def _determine_observation(self) -> np.array:
         result = []
         for water_system in self.water_systems:
             if isinstance(water_system, ControlledFacility):
                 result.append(water_system.determine_observation())
         return np.array(result)
+
+    def _determine_observation_space(self) -> Dict:
+        return Dict(
+            {
+                water_system.name: water_system.observation_space
+                for water_system in self.water_systems
+                if isinstance(water_system, ControlledFacility)
+            }
+        )
 
     def _determine_action_space(self) -> Dict:
         return Dict(
@@ -57,11 +69,9 @@ class WaterManagementSystem(gym.Env):
         # We need the following line to seed self.np_random.
         super().reset(seed=seed)
 
-        # TODO: Figure out the reset in facility
-        # for water_system in self.water_systems:
-        #     water_system.reset()
-        # print(list(self._determine_observation_space()))
-        return self._determine_observation_space(), self._determine_info()
+        for water_system in self.water_systems:
+            water_system.reset()
+        return self._determine_observation(), self._determine_info()
 
     def step(self, action: Dict) -> Tuple[ObsType, list, bool, bool, dict]:
         final_observation = {}
@@ -74,6 +84,7 @@ class WaterManagementSystem(gym.Env):
             if isinstance(water_system, ControlledFacility):
                 # pprint(action)
                 # observation, reward, terminated, truncated, info = water_system.step(action[water_system.name])
+                # TODO: Figure out how to get actions for each dam.
                 observation, reward, terminated, truncated, info = water_system.step(action[0])
             elif isinstance(water_system, Facility) or isinstance(water_system, Flow):
                 observation, reward, terminated, truncated, info = water_system.step()
