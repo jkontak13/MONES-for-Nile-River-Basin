@@ -194,7 +194,6 @@ class Dam(ControlledFacility):
         integ_step_count = total_seconds / integ_step
 
         for _ in np.arange(0, total_seconds, integ_step):
-
             surface = self.storage_to_surface(current_storage)
 
             evaporation = surface * (self.evap_rates[self.determine_month()] / (100 * integ_step_count))

@@ -1,5 +1,4 @@
 import gymnasium as gym
-import numpy as np
 from gymnasium.spaces import Space, Dict
 from gymnasium.core import ObsType, RenderFrame
 from typing import Any, List, Union, Optional, Tuple
@@ -13,13 +12,12 @@ class WaterManagementSystem(gym.Env):
         water_systems: List[Union[Facility, ControlledFacility, Flow]],
         rewards: dict,
         step_limit: int = float("inf"),
-        timestep: int = 0,
         seed: int = 42,
     ) -> None:
         self.water_systems: List[Union[Facility, ControlledFacility, Flow]] = water_systems
         self.rewards = rewards
-        self.step_limit = step_limit
-        self.timestep = timestep
+        self.step_limit: int = step_limit
+        self.timestep: int = 0
         self.seed: int = seed
 
         self.observation_space: Space = self._determine_observation_space()
@@ -50,14 +48,14 @@ class WaterManagementSystem(gym.Env):
         # TODO: decide on what we wnat to output in the info.
         return {"water_systems": self.water_systems}
 
-    def reset(self, seed: Optional[int] = None, options: Optional[dict] = None) -> tuple[ObsType, dict[str, Any]]:
+    def reset(self, seed: Optional[int] = None, options: Optional[dict] = None) -> Tuple[ObsType, dict[str, Any]]:
         # We need the following line to seed self.np_random.
         super().reset(seed=seed)
 
         # TODO: Figure out the reset in facility
         # for water_system in self.water_systems:
         #     water_system.reset()
-        print(list(self._determine_observation_space().values()))
+
         return self._determine_observation_space(), self._determine_info()
 
     def step(self, action: Dict) -> Tuple[ObsType, list, bool, bool, dict]:
@@ -80,7 +78,8 @@ class WaterManagementSystem(gym.Env):
 
             # Add reward to the objective assigned to this Facility (unless it is a Flow).
             if isinstance(water_system, Facility) or isinstance(water_system, ControlledFacility):
-                final_reward[water_system.objective_name] += reward
+                if water_system.objective_name:
+                    final_reward[water_system.objective_name] += reward
 
             # Store additional information
             final_info[water_system.name] = info
@@ -106,6 +105,6 @@ class WaterManagementSystem(gym.Env):
         # TODO: implement if needed, e.g. for closing opened rendering frames.
         pass
 
-    def render(self) -> Union[RenderFrame, list[RenderFrame], None]:
+    def render(self) -> Union[RenderFrame, List[RenderFrame], None]:
         # TODO: implement if needed, for rendering simulation.
         pass
