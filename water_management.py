@@ -32,7 +32,7 @@ def make_nile_env():
     # Set objective functions to identity for power plant, minimum_water_level for dam and water_deficit_minimised
     # for irrigation system.
     power_plant = PowerPlant("power-plant", Objective.identity, "ethiopia_power", 1000, 1000, 500, 100000, 1)
-    dam = Dam("GERD", Space(), Box(0, 1000), Objective.minimum_water_level, "min_HAD", stored_water=5100000000)
+    dam = Dam("GERD", Box(low=0.0, high=10000000000), Box(0, 1000), Objective.minimum_water_level, "min_HAD", stored_water=5100000000)
     irrigation_system = IrrigationSystem(
         "irrigation-system", [100, 50, 1000], Objective.water_deficit_minimised, "egypt_deficit"
     )
@@ -63,7 +63,7 @@ def make_nile_env():
         step_limit=12 * 20,
         seed=2137,
     )
-    return gymnasium.wrappers.FlattenObservation(water_management_system)
+    return water_management_system
 
 
 class Actor(nn.Module):

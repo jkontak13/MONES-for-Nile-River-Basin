@@ -154,3 +154,7 @@ class PowerPlant(Facility):
             "water_usage": self.water_usage,
             "total production (MWh)": self.production_sum,
         }
+
+    def reset(self) -> None:
+        super().reset()
+        self.production_sum = 0

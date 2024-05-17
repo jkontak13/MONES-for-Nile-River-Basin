@@ -41,6 +41,9 @@ class Flow:
 
         return None, reward, terminated, truncated, info
 
+    def reset(self) -> None:
+        self.timestep = 0
+
 
 class Inflow(Flow):
     def __init__(

@@ -1,3 +1,5 @@
+from pprint import pprint
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -28,19 +30,17 @@ def run_episode(env, model):
     done = False
     o, _ = env.reset()
 
-    spaces.utils.flatten(o, np.float32)
-
-
     while not done:
         with torch.no_grad():
+            # pprint(o)
             action = model(torch.from_numpy(o).float()[:, None])
             action = action.detach().numpy().flatten()
         n_o, r, terminated, truncated, _ = env.step(action)
-        e_r += r
+        # print("SUM r:", sum(r))
+        e_r += r  # Why this is set to 0 at the beginning? Shouldn't it be an array?
         o = n_o
         if terminated or truncated:
             done = True
-
     return torch.from_numpy(e_r).float()
 
 

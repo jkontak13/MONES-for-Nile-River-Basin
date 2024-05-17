@@ -226,3 +226,12 @@ class Dam(ControlledFacility):
         fp = np.asarray(fp)
 
         return compiled_interp(x, xp, fp, left, right)
+
+    def reset(self) -> None:
+        super().reset()
+        stored_water = self.storage_vector[0]
+        self.storage_vector = [stored_water]
+        self.stored_water = stored_water
+        self.level_vector = array("f", [])
+        self.inflow_vector = array("f", [])
+        self.release_vector = array("f", [])
