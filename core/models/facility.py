@@ -57,6 +57,11 @@ class Facility(ABC):
 
         return None, reward, terminated, truncated, info
 
+    def reset(self) -> None:
+        self.timestep: int = 0
+        self.inflow: float = 0
+        self.outflow: float = 0
+
 
 class ControlledFacility(ABC):
     def __init__(
@@ -123,3 +128,8 @@ class ControlledFacility(ABC):
             truncated,
             info,
         )
+
+    def reset(self) -> None:
+        self.timestep: int = 0
+        self.inflow: float = 0
+        self.outflow: float = 0

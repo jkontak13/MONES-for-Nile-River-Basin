@@ -156,5 +156,10 @@ class PowerPlant(Facility):
             "total production (MWh)": sum(self.production_vector),
         }
 
+
     def determine_month(self):
         return self.timestep % 12
+
+    def reset(self) -> None:
+        super().reset()
+        self.production_sum = 0

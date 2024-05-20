@@ -95,3 +95,8 @@ class IrrigationSystem(Facility):
             "total_deficit": self.total_deficit,
             "list_deficits": self.all_deficit,
         }
+
+    def reset(self):
+        super().reset()
+        self.total_deficit = 0
+        self.all_deficit = []

@@ -18,3 +18,6 @@ class Catchment(Facility):
 
     def determine_info(self) -> dict:
         return {"water_consumption": self.determine_consumption()}
+
+    def reset(self) -> None:
+        super().reset()
