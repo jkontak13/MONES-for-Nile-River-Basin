@@ -22,7 +22,8 @@ def nile_river_simulation(nu_of_timesteps=3):
     # Simulate for 3 timesteps (3 months).
     for _ in range(nu_of_timesteps):
         action = water_management_system.action_space.sample()
-        print("Action:", action)
+        action = np.array(list(action.values())).flatten()
+        print("Action:", action, "\n")
         (
             final_observation,
             final_reward,
