@@ -68,24 +68,25 @@ class WaterManagementSystem(gym.Env):
     def reset(self, seed: Optional[int] = None, options: Optional[dict] = None) -> Tuple[ObsType, dict[str, Any]]:
         # We need the following line to seed self.np_random.
         super().reset(seed=seed)
+        self.timestep = 0
+        self.observation: np.array = self._determine_observation()
 
         for water_system in self.water_systems:
             water_system.reset()
-        return self._determine_observation(), self._determine_info()
+        return self.observation, self._determine_info()
 
-    def step(self, action: Dict) -> Tuple[ObsType, list, bool, bool, dict]:
+    def step(self, action: np.array) -> Tuple[np.array, np.array, bool, bool, dict]:
         final_observation = {}
         final_reward = self.rewards
         final_terminated = False
         final_truncated = False
         final_info = {}
 
+        actions_taken = 0
         for water_system in self.water_systems:
             if isinstance(water_system, ControlledFacility):
-                # pprint(action)
-                # observation, reward, terminated, truncated, info = water_system.step(action[water_system.name])
-                # TODO: Figure out how to get actions for each dam.
-                observation, reward, terminated, truncated, info = water_system.step(action[0])
+                observation, reward, terminated, truncated, info = water_system.step(action[actions_taken])
+                actions_taken += 1
             elif isinstance(water_system, Facility) or isinstance(water_system, Flow):
                 observation, reward, terminated, truncated, info = water_system.step()
             else:

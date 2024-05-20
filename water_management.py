@@ -37,14 +37,15 @@ if __name__ == "__main__":
     agent = MONES(
         create_nile_river_env,
         Actor(number_of_objectives, number_of_actions, hidden=50),
-        n_population=1000,
-        n_runs=10,
+        n_population=10,
+        n_runs=5,
         logdir=logdir,
         indicator="hypervolume",
-        ref_point=np.array([-50000, -50000, -100000, -50000]),
+        # More thought needs to be put into this reference point. It seems to work for now.
+        ref_point=np.array([-50000, -100000000, -100000000, -50000]),
     )
 
-    agent.train(100)
+    agent.train(10)
     print("Distribution:", agent.dist)
     print("Logdir:", logdir)
     torch.save({" dist": agent.dist, " policy": agent.policy}, logdir + "checkpoint.pt")
