@@ -166,7 +166,7 @@ class MONES(object):
         self.start()
 
         for i in range(iterations):
-            print("Started inner loop")
+            print(f"Started epoch number: {i}")
             info = self.step()
             returns = info["returns"]
             # logging
