@@ -10,18 +10,20 @@ class Flow:
         sources: List[Union[Facility, ControlledFacility]],
         destination: Optional[Union[Facility, ControlledFacility]],
         max_capacity: float,
+        evaporation_rate: float = 0.0,
     ) -> None:
         self.name: str = name
         self.sources: List[Union[Facility, ControlledFacility]] = sources
         self.destination: Union[Facility, ControlledFacility] = destination
         self.max_capacity: float = max_capacity
+        self.evaporation_rate = evaporation_rate
         self.timestep = 0
 
     def determine_source_outflow(self) -> float:
         return sum(source.outflow for source in self.sources)
 
     def set_destination_inflow(self) -> None:
-        self.destination.inflow = self.determine_source_outflow()
+        self.destination.inflow = self.determine_source_outflow() * (1.0 - self.evaporation_rate)
 
     def is_truncated(self) -> bool:
         return False
@@ -49,8 +51,9 @@ class Inflow(Flow):
         destination: Union[Facility, ControlledFacility],
         max_capacity: float,
         all_inflow: List[float],
+        evaporation_rate: float = 0.0,
     ) -> None:
-        super().__init__(name, None, destination, max_capacity)
+        super().__init__(name, None, destination, max_capacity, evaporation_rate)
         self.all_inflow: List[float] = all_inflow
 
     def determine_source_outflow(self) -> float:
@@ -61,8 +64,13 @@ class Inflow(Flow):
 
 
 class Outflow(Flow):
-    def __init__(self, name: str, sources: List[Union[Facility, ControlledFacility]], max_capacity: float) -> None:
-        super().__init__(name, sources, None, max_capacity)
+    def __init__(
+        self,
+        name: str,
+        sources: List[Union[Facility, ControlledFacility]],
+        max_capacity: float,
+    ) -> None:
+        super().__init__(name, sources, None, max_capacity, evaporation_rate=0.0)
 
     def set_destination_inflow(self) -> None:
         pass
