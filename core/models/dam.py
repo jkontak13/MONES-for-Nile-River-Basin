@@ -103,7 +103,6 @@ class Dam(ControlledFacility):
         return self.objective_function(self.stored_water)
 
     def determine_outflow(self, action: float) -> float:
-        # TODO: Make timestep flexible for now it is hardcoded (one month)
 
         # Timestep is one month
         # Get the number of days in the month
@@ -114,6 +113,9 @@ class Dam(ControlledFacility):
         total_seconds = total_hours * 3600
         # Calculate integration step
         integ_step = total_seconds / (nu_days * 48)
+
+        self.inflow_vector = np.append(self.inflow_vector, self.inflow)
+
         # Calculate outflow using integration function
         outflow = self.integration(
             total_seconds,
@@ -156,8 +158,8 @@ class Dam(ControlledFacility):
 
     def storage_to_minmax(self, s):
         return (
-            np.interp(s, self.storage_to_surface_rel[0], self.storage_to_surface_rel[1]),
-            np.interp(s, self.storage_to_surface_rel[0], self.storage_to_surface_rel[2]),
+            np.interp(s, self.storage_to_minmax_rel[0], self.storage_to_minmax_rel[1]),
+            np.interp(s, self.storage_to_minmax_rel[0], self.storage_to_minmax_rel[2]),
         )
 
     def integration(
@@ -188,9 +190,8 @@ class Dam(ControlledFacility):
         avg_monthly_release: float
             Average monthly release given in m3.
         """
-        self.inflow_vector = np.append(self.inflow_vector, net_inflow_per_second)
         current_storage = self.storage_vector[-1]
-        in_month_releases = array("f", [])
+        in_month_releases = np.empty(0, dtype=np.float64)
         monthly_evap_total = 0
         integ_step_count = total_seconds / integ_step
 
@@ -204,7 +205,7 @@ class Dam(ControlledFacility):
 
             release_per_second = min(max_possible_release, max(min_possible_release, release_action))
 
-            in_month_releases.append(release_per_second)
+            in_month_releases = np.append(in_month_releases, release_per_second)
 
             total_addition = net_inflow_per_second * integ_step
 
@@ -215,7 +216,7 @@ class Dam(ControlledFacility):
         self.stored_water = current_storage
 
         # Calculate the ouflow of water
-        avg_monthly_release = np.mean(in_month_releases)
+        avg_monthly_release = np.mean(in_month_releases, dtype=np.float64)
         self.release_vector.append(avg_monthly_release)
 
         # Record level based on storage for time t

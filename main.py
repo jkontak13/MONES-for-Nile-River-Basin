@@ -114,11 +114,11 @@ def nile_river_simulation(nu_of_timesteps=3):
 
     GerdToRoseires_catchment = Catchment("GerdToRoseires_catchment", np.loadtxt(data_directory / "catchments" / "InflowGERDToRoseires.txt"))
 
-    RoseiresToAbuNaama_catchment = Catchment("RoseiresToAbuNaama_catchment",
-                                         np.loadtxt(data_directory / "catchments" / "InflowRoseiresToAbuNaama.txt"))
-
     # TODO: add catchment 1 inflow to sources of Roseires (inflow with destination Roseires)
     Roseires_flow = Flow("roseires_flow", [GERD_dam, GerdToRoseires_catchment], Roseires_dam, float("inf"))
+
+    RoseiresToAbuNaama_catchment = Catchment("RoseiresToAbuNaama_catchment",
+                                         np.loadtxt(data_directory / "catchments" / "InflowRoseiresToAbuNaama.txt"))
 
     # TODO: add catchment 2 inflow to sources of USSennar (inflow with destination USSennar)
     upstream_Sennar_received_flow = Flow(
@@ -180,10 +180,13 @@ def nile_river_simulation(nu_of_timesteps=3):
             GERD_inflow,
             GERD_dam,
             GERD_power_plant,
+            GerdToRoseires_catchment,
             Roseires_flow,
             Roseires_dam,
+            RoseiresToAbuNaama_catchment,
             upstream_Sennar_received_flow,
             USSennar_irr_system,
+            SukiToSennar_catchment,
             Sennar_flow,
             Sennar_dam,
             Gezira_received_flow,
@@ -236,7 +239,7 @@ def nile_river_simulation(nu_of_timesteps=3):
                              ensure_float(final_info.get("Sennar")["current_release"]),
                              ensure_float(final_info.get("HAD")["stored_water"]),
                              ensure_float(final_info.get("HAD")["current_release"]),
-                             final_info.get("GERD_power_plant")["total production (MWh)"]])
+                             ensure_float(final_info.get("GERD_power_plant")["monthly_production"])])
 
 
 def generateOutput():
@@ -244,10 +247,10 @@ def generateOutput():
 
     # Step 2: Create an OrderedDict with the specified keys and values
     return random_values, OrderedDict([
-        ('GERD', np.array([random_values[0]], dtype=np.float32)),
-        ('HAD', np.array([random_values[1]], dtype=np.float32)),
-        ('Roseires', np.array([random_values[2]], dtype=np.float32)),
-        ('Sennar', np.array([random_values[3]], dtype=np.float32))
+        ('GERD', np.array([random_values[0]], dtype=np.float64)),
+        ('HAD', np.array([random_values[1]], dtype=np.float64)),
+        ('Roseires', np.array([random_values[2]], dtype=np.float64)),
+        ('Sennar', np.array([random_values[3]], dtype=np.float64))
     ])
 
 def ensure_float(value):
