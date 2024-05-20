@@ -36,8 +36,12 @@ class Dam(ControlledFacility):
 
     Methods
     -------
+    determine_current_level()
+        Returns current water level
     determine_info()
         Return dictionary with parameters of the dam.
+    determine_release_limit()
+        Return min and max release based on current water level.
     storage_to_level(h=float)
         Returns the level(height) based on volume.
     level_to_storage(s=float)
@@ -62,6 +66,7 @@ class Dam(ControlledFacility):
         objective_name: str = "",
         max_capacity: float = float("Inf"),
         stored_water: float = 0,
+        release_limits: dict = None,
     ) -> None:
         super().__init__(name, observation_space, action_space, max_capacity)
         self.stored_water: float = stored_water
@@ -82,6 +87,8 @@ class Dam(ControlledFacility):
         self.objective_function = objective_function
         self.objective_name = objective_name
 
+        self.release_limits = release_limits
+
         # TODO: Read it from file
         self.nu_of_days_per_month = [
             31,  # January
@@ -101,7 +108,36 @@ class Dam(ControlledFacility):
     def determine_reward(self) -> float:
         return self.objective_function(self.stored_water)
 
+    def determine_release_limit(self) -> Tuple[float, float]:
+        current_level = self.determine_current_level()
+        if not current_level:
+            current_level = self.storage_to_level(self.stored_water)
+
+        self.release_range = None
+        max = 0
+
+        # Water release limits are given by water level and corresponding min and max
+        # Therefore we want to find the maximum water level that is smaller than the current water level
+        for level in self.release_limits.keys():
+            if (level >= max) and (level <= current_level):
+                max = level
+                self.release_range = self.release_limits[level]
+        if self.release_range:
+            return self.release_range[0], self.release_range[1]
+        else:
+            return None, None
+
     def determine_outflow(self, action: float) -> float:
+        # Clip action to release limits
+        # (First wanted to implement this in ControlledFacility class but it doesn't have a level attribute)
+        # Also looked into the option of using ActionWrapper but that is applied on gym.Env
+        if self.release_limits:
+            min_release, max_release = self.determine_release_limit()
+            # Check if function did not return tuple of Nones
+            if min_release:
+                # Clip action value between min and max release
+                action = min(max_release, max(min_release, action))
+
         # TODO: Make timestep flexible for now it is hardcoded (one month)
 
         # Timestep is one month
@@ -121,6 +157,9 @@ class Dam(ControlledFacility):
             integ_step,
         )
         return outflow
+
+    def determine_current_level(self) -> float:
+        return self.level_vector[-1] if self.level_vector else None
 
     def determine_info(self) -> dict:
         info = {

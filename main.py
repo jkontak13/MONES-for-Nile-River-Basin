@@ -44,6 +44,12 @@ def create_nile_river_env():
         Box(0, 10000),
         Objective.no_objective,
         stored_water=15000000000,
+        release_limits={
+            590: [0, 0],
+            591: [0, 10000],
+            630: [0, 10000],
+            640: [4000, 10000],
+        },
     )
     GERD_power_plant = PowerPlant(
         "GERD_power_plant",
@@ -94,6 +100,12 @@ def create_nile_river_env():
         Box(0, 10000),
         Objective.no_objective,
         stored_water=4570000000,
+        release_limits={
+            467: [0, 0],
+            475: [0, 10000],
+            481: [1000, 10000],
+            490: [4000, 10000],
+        },
     )
     Sennar_dam = Dam(
         "Sennar",
@@ -101,6 +113,12 @@ def create_nile_river_env():
         Box(0, 10000),
         Objective.no_objective,
         stored_water=430000000,
+        release_limits={
+            417.2: [0, 0],
+            418: [0, 6000],
+            420: [0, 6000],
+            421.7: [4000, 10000],
+        },
     )
     # Egypt
     Egypt_irr_system = IrrigationSystem(
@@ -116,6 +134,12 @@ def create_nile_river_env():
         Objective.minimum_water_level,
         "HAD_minimum_water_level",
         stored_water=137000000000,
+        release_limits={
+            147: [0, 0],
+            148: [0, 4000],
+            175: [1000, 4000],
+            182: [4000, 4000],
+        },
     )
     # Create 'edges' between Facilities.
     # TODO: determine max capacity for flows
