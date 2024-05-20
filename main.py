@@ -17,17 +17,38 @@ def nile_river_simulation(nu_of_timesteps=3):
     # Set objective functions to identity for power plant, minimum_water_level for dam and water_deficit_minimised
     # for irrigation system.
 
+    water_management_system = create_nile_river_env()
+
+    # Simulate for 3 timesteps (3 months).
+    for _ in range(nu_of_timesteps):
+        action = water_management_system.action_space.sample()
+        action = np.array(list(action.values())).flatten()
+        print("Action:", action, "\n")
+        (
+            final_observation,
+            final_reward,
+            final_terminated,
+            final_truncated,
+            final_info,
+        ) = water_management_system.step(action)
+        print("Reward:", final_reward)
+        pprint.pprint(final_info)
+        print("Is finished:", final_truncated, final_terminated)
+
+
+def create_nile_river_env():
     # Ethiopia
     GERD_dam = Dam(
         "GERD",
-        Space(),
+        Box(low=0, high=80000000000),
         Box(0, 10000),
         Objective.no_objective,
         stored_water=15000000000,
     )
     GERD_power_plant = PowerPlant(
         "GERD_power_plant",
-        Objective.identity,
+        # Objective.identity,
+        Objective.scalar_identity,
         "ethiopia_power",
         efficiency=0.93,
         max_turbine_flow=4320,
@@ -35,9 +56,7 @@ def nile_river_simulation(nu_of_timesteps=3):
         max_capacity=6000,
         dam=GERD_dam,
     )
-
     data_directory = Path(__file__).parent / "core" / "data"
-
     # Sudan
     DSSennar_irr_system = IrrigationSystem(
         "DSSennar_irr",
@@ -71,19 +90,18 @@ def nile_river_simulation(nu_of_timesteps=3):
     )
     Roseires_dam = Dam(
         "Roseires",
-        Space(),
+        Box(low=0, high=80000000000),
         Box(0, 10000),
         Objective.no_objective,
         stored_water=4570000000,
     )
     Sennar_dam = Dam(
         "Sennar",
-        Space(),
+        Box(low=0, high=80000000000),
         Box(0, 10000),
         Objective.no_objective,
         stored_water=430000000,
     )
-
     # Egypt
     Egypt_irr_system = IrrigationSystem(
         "Egypt_irr",
@@ -93,26 +111,22 @@ def nile_river_simulation(nu_of_timesteps=3):
     )
     HAD_dam = Dam(
         "HAD",
-        Space(),
+        Box(low=0, high=80000000000),
         Box(0, 4000),
         Objective.minimum_water_level,
         "HAD_minimum_water_level",
         stored_water=137000000000,
     )
-
     # Create 'edges' between Facilities.
     # TODO: determine max capacity for flows
-
     GERD_inflow = Inflow(
         "gerd_inflow",
         GERD_dam,
         float("inf"),
         np.loadtxt(data_directory / "catchments" / "blue-nile.txt"),
     )
-
     # TODO: add catchment 1 inflow to sources of Roseires (inflow with destination Roseires)
     Roseires_flow = Flow("roseires_flow", [GERD_dam], Roseires_dam, float("inf"))
-
     # TODO: add catchment 2 inflow to sources of USSennar (inflow with destination USSennar)
     upstream_Sennar_received_flow = Flow(
         "upstream_Sennar_received_flow",
@@ -120,37 +134,28 @@ def nile_river_simulation(nu_of_timesteps=3):
         USSennar_irr_system,
         float("inf"),
     )
-
     # TODO: add catchment 3 inflow to sources of Sennar (inflow with destination USSennar)
     Sennar_flow = Flow("sennar_flow", [USSennar_irr_system], Sennar_dam, float("inf"))
-
     Gezira_received_flow = Flow("gezira_received_flow", [Sennar_dam], Gezira_irr_system, float("inf"))
-
     Dinder_catchment = Catchment("dinder_catchment", np.loadtxt(data_directory / "catchments" / "dinder.txt"))
-
     Rahad_catchment = Catchment("rahad_catchment", np.loadtxt(data_directory / "catchments" / "rahad.txt"))
-
     downstream_Sennar_received_flow = Flow(
         "downstream_sennar_received_flow",
         [Gezira_irr_system, Dinder_catchment, Rahad_catchment],
         DSSennar_irr_system,
         float("inf"),
     )
-
     WhiteNile_catchment = Catchment(
         "whitenile_catchment",
         np.loadtxt(data_directory / "catchments" / "white-nile.txt"),
     )
-
     Taminiat_received_flow = Flow(
         "taminiat_received_flow",
         [DSSennar_irr_system, WhiteNile_catchment],
         Tamaniat_irr_system,
         float("inf"),
     )
-
     Atbara_catchment = Catchment("atbara_catchment", np.loadtxt(data_directory / "catchments" / "atbara.txt"))
-
     # TODO: change Hassanab received flow to depend on leftover flow from Taminiat in previous month (see A.2.8)
     Hassanab_received_flow = Flow(
         "hassanab_received_flow",
@@ -158,11 +163,8 @@ def nile_river_simulation(nu_of_timesteps=3):
         Hassanab_irr_system,
         float("inf"),
     )
-
     HAD_flow = Flow("had_flow", [Hassanab_irr_system], HAD_dam, float("inf"))
-
     Egypt_flow = Flow("egypt_flow", [HAD_dam], Egypt_irr_system, float("inf"))
-
     # Create water management system. Add Facilities in the topological order (in the list).
     # Egypt deficit reward goes negative when there is a deficit. Otherwise is 0.
     water_management_system = WaterManagementSystem(
@@ -200,22 +202,9 @@ def nile_river_simulation(nu_of_timesteps=3):
             "HAD_minimum_water_level": 0,
         },
         seed=2137,
+        step_limit=24,  # Use low horizon for local training
     )
-
-    # Simulate for 3 timestamps (3 months).
-    for _ in range(nu_of_timesteps):
-        action = water_management_system.action_space.sample()
-        print("Action:", action)
-        (
-            final_observation,
-            final_reward,
-            final_terminated,
-            final_truncated,
-            final_info,
-        ) = water_management_system.step(action)
-        print("Reward:", final_reward)
-        pprint.pprint(final_info)
-        print("Is finished:", final_truncated, final_terminated)
+    return water_management_system
 
 
 if __name__ == "__main__":
