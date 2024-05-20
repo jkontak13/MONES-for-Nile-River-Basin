@@ -11,19 +11,22 @@ class Flow:
         destination: Optional[Union[Facility, ControlledFacility]],
         max_capacity: float,
         evaporation_rate: float = 0.0,
+        delay: int = 0,
     ) -> None:
         self.name: str = name
         self.sources: List[Union[Facility, ControlledFacility]] = sources
         self.destination: Union[Facility, ControlledFacility] = destination
         self.max_capacity: float = max_capacity
-        self.evaporation_rate = evaporation_rate
-        self.timestep = 0
+        self.evaporation_rate: float = evaporation_rate
+        self.delay: int = delay
+        self.timestep: int = 0
 
     def determine_source_outflow(self) -> float:
-        return sum(source.outflow for source in self.sources)
+        return sum(source.get_outflow_at_timestep(self.timestep - self.delay) for source in self.sources)
 
     def set_destination_inflow(self) -> None:
-        self.destination.inflow = self.determine_source_outflow() * (1.0 - self.evaporation_rate)
+        destination_inflow = self.determine_source_outflow() * (1.0 - self.evaporation_rate)
+        self.destination.set_inflow(self.timestep, destination_inflow)
 
     def is_truncated(self) -> bool:
         return False
@@ -55,12 +58,16 @@ class Inflow(Flow):
         max_capacity: float,
         all_inflow: List[float],
         evaporation_rate: float = 0.0,
+        delay: int = 0,
     ) -> None:
-        super().__init__(name, None, destination, max_capacity, evaporation_rate)
+        super().__init__(name, None, destination, max_capacity, evaporation_rate, delay)
         self.all_inflow: List[float] = all_inflow
 
     def determine_source_outflow(self) -> float:
-        return self.all_inflow[self.timestep % len(self.all_inflow)]
+        if self.timestep < self.delay:
+            return self.all_inflow[0]
+        else:
+            return self.all_inflow[(self.timestep - self.delay) % len(self.all_inflow)]
 
     def is_truncated(self) -> bool:
         return self.timestep >= len(self.all_inflow)
@@ -73,7 +80,7 @@ class Outflow(Flow):
         sources: List[Union[Facility, ControlledFacility]],
         max_capacity: float,
     ) -> None:
-        super().__init__(name, sources, None, max_capacity, evaporation_rate=0.0)
+        super().__init__(name, sources, None, max_capacity)
 
     def set_destination_inflow(self) -> None:
         pass

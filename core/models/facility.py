@@ -9,8 +9,8 @@ class Facility(ABC):
     def __init__(self, name: str, objective_function=Objective.no_objective, objective_name: str = "") -> None:
         self.name: str = name
         self.timestep: int = 0
-        self.inflow: float = 0
-        self.outflow: float = 0
+        self.all_inflow: list[float] = []
+        self.all_outflow: list[float] = []
 
         self.objective_function = objective_function
         self.objective_name = objective_name
@@ -33,8 +33,20 @@ class Facility(ABC):
     def is_truncated(self) -> bool:
         return False
 
+    def get_outflow_at_timestep(self, timestep: int) -> float:
+        if timestep < 0:
+            return self.all_outflow[0]
+        else:
+            return self.all_outflow[timestep]
+
+    def set_inflow(self, timestep: int, inflow: float) -> None:
+        if len(self.all_inflow) != timestep:
+            raise IndexError
+
+        self.all_inflow.append(inflow)
+
     def step(self) -> Tuple[ObsType, float, bool, bool, dict]:
-        self.outflow = self.inflow - self.determine_consumption()
+        self.all_outflow.append(self.all_inflow[self.timestep] - self.determine_consumption())
         # TODO: Determine if we need to satisy any terminating codnitions for facility.
         reward = self.determine_reward()
         terminated = self.is_terminated()
@@ -47,8 +59,8 @@ class Facility(ABC):
 
     def reset(self) -> None:
         self.timestep: int = 0
-        self.inflow: float = 0
-        self.outflow: float = 0
+        self.all_inflow: list[float] = []
+        self.all_outflow: list[float] = []
 
 
 class ControlledFacility(ABC):
@@ -63,8 +75,8 @@ class ControlledFacility(ABC):
     ) -> None:
         self.name: str = name
         self.timestep: int = 0
-        self.inflow: float = 0
-        self.outflow: float = 0
+        self.all_inflow: list[float] = []
+        self.all_outflow: list[float] = []
 
         self.observation_space: Space = observation_space
         self.action_space: Space = action_space
@@ -97,8 +109,20 @@ class ControlledFacility(ABC):
     def is_truncated(self) -> bool:
         return False
 
+    def get_outflow_at_timestep(self, timestep: int) -> float:
+        if timestep < 0:
+            return self.all_outflow[0]
+        else:
+            return self.all_outflow[timestep]
+
+    def set_inflow(self, timestep: int, inflow: float) -> None:
+        if len(self.all_inflow) != timestep:
+            raise IndexError
+
+        self.all_inflow.append(inflow)
+
     def step(self, action: ActType) -> Tuple[ObsType, SupportsFloat, bool, bool, dict]:
-        self.outflow = self.determine_outflow(action)
+        self.all_outflow.append(self.determine_outflow(action))
         # TODO: Change stored_water to multiple outflows.
 
         observation = self.determine_observation()
@@ -119,5 +143,5 @@ class ControlledFacility(ABC):
 
     def reset(self) -> None:
         self.timestep: int = 0
-        self.inflow: float = 0
-        self.outflow: float = 0
+        self.all_inflow: list[float] = []
+        self.all_outflow: list[float] = []
