@@ -103,7 +103,6 @@ class Dam(ControlledFacility):
         return self.objective_function(self.stored_water)
 
     def determine_outflow(self, action: float) -> float:
-
         # Timestep is one month
         # Get the number of days in the month
         nu_days = self.nu_of_days_per_month[self.determine_month()]

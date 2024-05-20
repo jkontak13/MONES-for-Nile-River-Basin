@@ -1,3 +1,4 @@
+import pprint
 from collections import OrderedDict
 
 import numpy as np
@@ -12,6 +13,8 @@ from core.models.power_plant import PowerPlant
 from core.models.irrigation_system import IrrigationSystem
 from core.models.catchment import Catchment
 import csv
+
+make_csv = False
 
 
 def nile_river_simulation(nu_of_timesteps=3):
@@ -112,13 +115,16 @@ def nile_river_simulation(nu_of_timesteps=3):
         np.loadtxt(data_directory / "catchments" / "InflowBlueNile.txt"),
     )
 
-    GerdToRoseires_catchment = Catchment("GerdToRoseires_catchment", np.loadtxt(data_directory / "catchments" / "InflowGERDToRoseires.txt"))
+    GerdToRoseires_catchment = Catchment(
+        "GerdToRoseires_catchment", np.loadtxt(data_directory / "catchments" / "InflowGERDToRoseires.txt")
+    )
 
     # TODO: add catchment 1 inflow to sources of Roseires (inflow with destination Roseires)
     Roseires_flow = Flow("roseires_flow", [GERD_dam, GerdToRoseires_catchment], Roseires_dam, float("inf"))
 
-    RoseiresToAbuNaama_catchment = Catchment("RoseiresToAbuNaama_catchment",
-                                         np.loadtxt(data_directory / "catchments" / "InflowRoseiresToAbuNaama.txt"))
+    RoseiresToAbuNaama_catchment = Catchment(
+        "RoseiresToAbuNaama_catchment", np.loadtxt(data_directory / "catchments" / "InflowRoseiresToAbuNaama.txt")
+    )
 
     # TODO: add catchment 2 inflow to sources of USSennar (inflow with destination USSennar)
     upstream_Sennar_received_flow = Flow(
@@ -128,8 +134,9 @@ def nile_river_simulation(nu_of_timesteps=3):
         float("inf"),
     )
 
-    SukiToSennar_catchment = Catchment("SukiToSennar_catchment",
-                                       np.loadtxt(data_directory / "catchments" / "InflowSukiToSennar.txt"))
+    SukiToSennar_catchment = Catchment(
+        "SukiToSennar_catchment", np.loadtxt(data_directory / "catchments" / "InflowSukiToSennar.txt")
+    )
 
     # TODO: add catchment 3 inflow to sources of Sennar (inflow with destination USSennar)
     Sennar_flow = Flow("sennar_flow", [USSennar_irr_system, SukiToSennar_catchment], Sennar_dam, float("inf"))
@@ -215,14 +222,54 @@ def nile_river_simulation(nu_of_timesteps=3):
         seed=2137,
     )
     np.random.seed(42)
+
     # Simulate for 3 timestamps (3 months).
-    with open('group13.csv', 'w', newline='') as file:
-        writer = csv.writer(file)
-        writer.writerow(
-            ['Year', 'Input', 'Gerd_storage', 'Gerd_release', 'Roseires_storage', 'Roseires_release', 'Sennar_storage',
-             'Sennar_release', 'Had_storage', 'Had_release', 'Gerd_production'])
-        for i in range(nu_of_timesteps):
-            rands, action = generateOutput()
+    if make_csv:
+        with open("group13.csv", "w", newline="") as file:
+            writer = csv.writer(file)
+            writer.writerow(
+                [
+                    "Year",
+                    "Input",
+                    "Gerd_storage",
+                    "Gerd_release",
+                    "Roseires_storage",
+                    "Roseires_release",
+                    "Sennar_storage",
+                    "Sennar_release",
+                    "Had_storage",
+                    "Had_release",
+                    "Gerd_production",
+                ]
+            )
+            for i in range(nu_of_timesteps):
+                rands, action = generateOutput()
+                (
+                    final_observation,
+                    final_reward,
+                    final_terminated,
+                    final_truncated,
+                    final_info,
+                ) = water_management_system.step(action)
+                writer.writerow(
+                    [
+                        i,
+                        rands,
+                        ensure_float(final_info.get("GERD")["stored_water"]),
+                        ensure_float(final_info.get("GERD")["current_release"]),
+                        ensure_float(final_info.get("Roseires")["stored_water"]),
+                        ensure_float(final_info.get("Roseires")["current_release"]),
+                        ensure_float(final_info.get("Sennar")["stored_water"]),
+                        ensure_float(final_info.get("Sennar")["current_release"]),
+                        ensure_float(final_info.get("HAD")["stored_water"]),
+                        ensure_float(final_info.get("HAD")["current_release"]),
+                        ensure_float(final_info.get("GERD_power_plant")["monthly_production"]),
+                    ]
+                )
+    else:
+        for _ in range(nu_of_timesteps):
+            action = water_management_system.action_space.sample()
+            print("Action:", action)
             (
                 final_observation,
                 final_reward,
@@ -230,33 +277,32 @@ def nile_river_simulation(nu_of_timesteps=3):
                 final_truncated,
                 final_info,
             ) = water_management_system.step(action)
-            writer.writerow([i, rands,
-                             ensure_float(final_info.get("GERD")["stored_water"]),
-                             ensure_float(final_info.get("GERD")["current_release"]),
-                             ensure_float(final_info.get("Roseires")["stored_water"]),
-                             ensure_float(final_info.get("Roseires")["current_release"]),
-                             ensure_float(final_info.get("Sennar")["stored_water"]),
-                             ensure_float(final_info.get("Sennar")["current_release"]),
-                             ensure_float(final_info.get("HAD")["stored_water"]),
-                             ensure_float(final_info.get("HAD")["current_release"]),
-                             ensure_float(final_info.get("GERD_power_plant")["monthly_production"])])
+            print("Reward:", final_reward)
+            pprint.pprint(final_info)
+            print("Is finished:", final_truncated, final_terminated)
 
 
 def generateOutput():
-    random_values = np.random.rand(4, ) * [10000, 4000, 10000, 10000]
+    random_values = np.random.rand(
+        4,
+    ) * [10000, 4000, 10000, 10000]
 
     # Step 2: Create an OrderedDict with the specified keys and values
-    return random_values, OrderedDict([
-        ('GERD', np.array([random_values[0]], dtype=np.float64)),
-        ('HAD', np.array([random_values[1]], dtype=np.float64)),
-        ('Roseires', np.array([random_values[2]], dtype=np.float64)),
-        ('Sennar', np.array([random_values[3]], dtype=np.float64))
-    ])
+    return random_values, OrderedDict(
+        [
+            ("GERD", np.array([random_values[0]], dtype=np.float64)),
+            ("HAD", np.array([random_values[1]], dtype=np.float64)),
+            ("Roseires", np.array([random_values[2]], dtype=np.float64)),
+            ("Sennar", np.array([random_values[3]], dtype=np.float64)),
+        ]
+    )
+
 
 def ensure_float(value):
     if isinstance(value, np.ndarray):
         return value.item()
     return value
+
 
 if __name__ == "__main__":
     nile_river_simulation(240)
