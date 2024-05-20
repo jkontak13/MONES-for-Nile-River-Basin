@@ -145,12 +145,12 @@ class PowerPlant(Facility):
         Returns:
         ----------
         dict
-            Info about power plant (name, inflow, outflow, water usage, timestep, total production)
+            Info about power plant (name, dam.inflow, dam.outflow, water usage, timestep, total production)
         """
         return {
             "name": self.name,
-            "inflow": self.inflow,
-            "outflow": self.outflow,
+            "inflow": self.dam.inflow,
+            "outflow": self.dam.outflow,
             "water_usage": self.water_usage,
             "total production (MWh)": self.production_sum,
         }
