@@ -91,7 +91,7 @@ class PowerPlant(Facility):
         turbine_flow = min(self.dam.outflow, self.max_turbine_flow)
 
         # Uses water level from dam to determine water level
-        water_level = self.dam.determine_current_level() if self.dam.level_vector else 0
+        water_level = self.dam.level_vector[-1] if self.dam.level_vector else 0
         # Calculate at what level the head will generate power, using water_level of the outflow and head_start_level
         head = max(0.0, water_level - self.head_start_level)
 
@@ -145,12 +145,12 @@ class PowerPlant(Facility):
         Returns:
         ----------
         dict
-            Info about power plant (name, inflow, outflow, water usage, timestep, total production)
+            Info about power plant (name, dam.inflow, dam.outflow, water usage, timestep, total production)
         """
         return {
             "name": self.name,
-            "inflow": self.inflow,
-            "outflow": self.outflow,
+            "inflow": self.dam.inflow,
+            "outflow": self.dam.outflow,
             "water_usage": self.water_usage,
             "total production (MWh)": self.production_sum,
         }

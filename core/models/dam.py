@@ -6,6 +6,7 @@ import numpy as np
 from numpy.core.multiarray import interp as compiled_interp
 from array import array
 from bisect import bisect_right
+from exceptions import ReleaseRangeError
 
 dam_data_directory = Path(__file__).parents[1] / "data" / "dams"
 
@@ -33,6 +34,9 @@ class Dam(ControlledFacility):
     evap_rates: np.array (1x12)
         cm
         Monthly evaporation rates of the reservoir
+    release_limits: dict
+        Dict with release limits.
+        Each key is a water level with corresponding release range
 
     Methods
     -------
@@ -108,33 +112,44 @@ class Dam(ControlledFacility):
     def determine_reward(self) -> float:
         return self.objective_function(self.stored_water)
 
-    def determine_release_limit(self) -> Tuple[float, float]:
-        current_level = self.determine_current_level()
-        if not current_level:
+    def determine_release_range(self) -> Tuple[float, float]:
+        # If no release limits are specified at init, we return a range of [0, infinity]
+        if not self.release_limits:
+            return 0.0, float("inf")
+        if len(self.level_vector) > 0:
+            current_level = self.level_vector[-1]
+        else:
             current_level = self.storage_to_level(self.stored_water)
 
-        self.release_range = None
-        max = 0
+        release_range = None
+        max_level = 0
 
         # Water release limits are given by water level and corresponding min and max
         # Therefore we want to find the maximum water level that is smaller than the current water level
         for level in self.release_limits.keys():
-            if (level >= max) and (level <= current_level):
-                max = level
-                self.release_range = self.release_limits[level]
-        if self.release_range:
-            return self.release_range[0], self.release_range[1]
+            if (level >= max_level) and (level <= current_level):
+                max_level = level
+                release_range = self.release_limits[level]
+        if release_range:
+            return release_range[0], release_range[1]
+        # When we do not find a release range that matches, we throw an error
+        # This might happen when the current water level becomes too low, meaning no level will be below the current level
         else:
-            return None, None
+            raise ReleaseRangeError(
+                "No release range found, either the release_limits attribute does not contain water levels, or the current water level is not valid.",
+                self.name,
+                current_level,
+                self.release_limits,
+            )
 
     def determine_outflow(self, action: float) -> float:
         # Clip action to release limits
         # (First wanted to implement this in ControlledFacility class but it doesn't have a level attribute)
         # Also looked into the option of using ActionWrapper but that is applied on gym.Env
         if self.release_limits:
-            min_release, max_release = self.determine_release_limit()
-            # Check if function did not return tuple of Nones
-            if min_release:
+            min_release, max_release = self.determine_release_range()
+            # Check if function did not return None
+            if min_release is not None and max_release is not None:
                 # Clip action value between min and max release
                 action = min(max_release, max(min_release, action))
 
@@ -157,9 +172,6 @@ class Dam(ControlledFacility):
             integ_step,
         )
         return outflow
-
-    def determine_current_level(self) -> float:
-        return self.level_vector[-1] if self.level_vector else None
 
     def determine_info(self) -> dict:
         info = {
