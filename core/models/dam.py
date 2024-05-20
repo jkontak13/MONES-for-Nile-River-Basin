@@ -233,6 +233,6 @@ class Dam(ControlledFacility):
         stored_water = self.storage_vector[0]
         self.storage_vector = [stored_water]
         self.stored_water = stored_water
-        self.level_vector = array("f", [])
-        self.inflow_vector = array("f", [])
-        self.release_vector = array("f", [])
+        self.level_vector = []
+        self.inflow_vector = []
+        self.release_vector = []

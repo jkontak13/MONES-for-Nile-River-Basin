@@ -14,10 +14,10 @@ from core.models.irrigation_system import IrrigationSystem
 from core.models.catchment import Catchment
 import csv
 
-make_csv = False
+make_csv = True
 
 
-def nile_river_simulation(nu_of_timesteps=3):
+def nile_river_simulation(nu_of_timesteps=240):
     # Create power plant, dam and irrigation system. Initialise with semi-random parameters.
     # Set objective functions to identity for power plant, minimum_water_level for dam and water_deficit_minimised
     # for irrigation system.
@@ -25,20 +25,66 @@ def nile_river_simulation(nu_of_timesteps=3):
     water_management_system = create_nile_river_env()
 
     # Simulate for 3 timesteps (3 months).
-    for _ in range(nu_of_timesteps):
-        action = water_management_system.action_space.sample()
-        action = np.array(list(action.values())).flatten()
-        print("Action:", action, "\n")
-        (
-            final_observation,
-            final_reward,
-            final_terminated,
-            final_truncated,
-            final_info,
-        ) = water_management_system.step(action)
-        print("Reward:", final_reward)
-        pprint.pprint(final_info)
-        print("Is finished:", final_truncated, final_terminated)
+
+    # Simulate for 3 timestamps (3 months).
+    if make_csv:
+        with open("group13.csv", "w", newline="") as file:
+            writer = csv.writer(file)
+            writer.writerow(
+                [
+                    "Year",
+                    "Input",
+                    "Gerd_storage",
+                    "Gerd_release",
+                    "Roseires_storage",
+                    "Roseires_release",
+                    "Sennar_storage",
+                    "Sennar_release",
+                    "Had_storage",
+                    "Had_release",
+                    "Gerd_production",
+                ]
+            )
+            np.random.seed(42)
+            for i in range(nu_of_timesteps):
+                action = generateOutput()
+                (
+                    final_observation,
+                    final_reward,
+                    final_terminated,
+                    final_truncated,
+                    final_info,
+                ) = water_management_system.step(action)
+                writer.writerow(
+                    [
+                        i,
+                        action,
+                        ensure_float(final_info.get("GERD")["stored_water"]),
+                        ensure_float(final_info.get("GERD")["current_release"]),
+                        ensure_float(final_info.get("Roseires")["stored_water"]),
+                        ensure_float(final_info.get("Roseires")["current_release"]),
+                        ensure_float(final_info.get("Sennar")["stored_water"]),
+                        ensure_float(final_info.get("Sennar")["current_release"]),
+                        ensure_float(final_info.get("HAD")["stored_water"]),
+                        ensure_float(final_info.get("HAD")["current_release"]),
+                        ensure_float(final_info.get("GERD_power_plant")["monthly_production"]),
+                    ]
+                )
+    else:
+        for _ in range(nu_of_timesteps):
+            action = water_management_system.action_space.sample()
+            action = np.array(list(action.values())).flatten()
+            print("Action:", action, "\n")
+            (
+                final_observation,
+                final_reward,
+                final_terminated,
+                final_truncated,
+                final_info,
+            ) = water_management_system.step(action)
+            print("Reward:", final_reward)
+            pprint.pprint(final_info)
+            print("Is finished:", final_truncated, final_terminated)
 
 
 def create_nile_river_env():
@@ -48,7 +94,7 @@ def create_nile_river_env():
         Box(low=0, high=80000000000),
         Box(0, 10000),
         Objective.no_objective,
-        stored_water=15000000000,
+        stored_water=15000000000.0,
     )
     GERD_power_plant = PowerPlant(
         "GERD_power_plant",
@@ -135,16 +181,13 @@ def create_nile_river_env():
         "GerdToRoseires_catchment", np.loadtxt(data_directory / "catchments" / "InflowGERDToRoseires.txt")
     )
     # TODO: add catchment 1 inflow to sources of Roseires (inflow with destination Roseires)
-<<<<<<< main.py
+
     Roseires_flow = Flow("roseires_flow", [GERD_dam, GerdToRoseires_catchment], Roseires_dam, float("inf"))
 
     RoseiresToAbuNaama_catchment = Catchment(
         "RoseiresToAbuNaama_catchment", np.loadtxt(data_directory / "catchments" / "InflowRoseiresToAbuNaama.txt")
     )
 
-=======
-    Roseires_flow = Flow("roseires_flow", [GERD_dam], Roseires_dam, float("inf"))
->>>>>>> main.py
     # TODO: add catchment 2 inflow to sources of USSennar (inflow with destination USSennar)
     upstream_Sennar_received_flow = Flow(
         "upstream_Sennar_received_flow",
@@ -152,7 +195,7 @@ def create_nile_river_env():
         USSennar_irr_system,
         float("inf"),
     )
-<<<<<<< main.py
+
 
     SukiToSennar_catchment = Catchment(
         "SukiToSennar_catchment", np.loadtxt(data_directory / "catchments" / "InflowSukiToSennar.txt")
@@ -167,13 +210,6 @@ def create_nile_river_env():
 
     Rahad_catchment = Catchment("rahad_catchment", np.loadtxt(data_directory / "catchments" / "InflowRahad.txt"))
 
-=======
-    # TODO: add catchment 3 inflow to sources of Sennar (inflow with destination USSennar)
-    Sennar_flow = Flow("sennar_flow", [USSennar_irr_system], Sennar_dam, float("inf"))
-    Gezira_received_flow = Flow("gezira_received_flow", [Sennar_dam], Gezira_irr_system, float("inf"))
-    Dinder_catchment = Catchment("dinder_catchment", np.loadtxt(data_directory / "catchments" / "dinder.txt"))
-    Rahad_catchment = Catchment("rahad_catchment", np.loadtxt(data_directory / "catchments" / "rahad.txt"))
->>>>>>> main.py
     downstream_Sennar_received_flow = Flow(
         "downstream_sennar_received_flow",
         [Gezira_irr_system, Dinder_catchment, Rahad_catchment],
@@ -190,13 +226,9 @@ def create_nile_river_env():
         Tamaniat_irr_system,
         float("inf"),
     )
-<<<<<<< main.py
 
     Atbara_catchment = Catchment("atbara_catchment", np.loadtxt(data_directory / "catchments" / "InflowAtbara.txt"))
 
-=======
-    Atbara_catchment = Catchment("atbara_catchment", np.loadtxt(data_directory / "catchments" / "atbara.txt"))
->>>>>>> main.py
     # TODO: change Hassanab received flow to depend on leftover flow from Taminiat in previous month (see A.2.8)
     Hassanab_received_flow = Flow(
         "hassanab_received_flow",
@@ -245,86 +277,19 @@ def create_nile_river_env():
             "egypt_deficit_minimised": 0,
             "HAD_minimum_water_level": 0,
         },
-        seed=2137,
-        step_limit=24,  # Use low horizon for local training
+        seed=42,
+        step_limit=240,  # Use low horizon for local training
     )
 
-    np.random.seed(42)
-
-    # Simulate for 3 timestamps (3 months).
-    if make_csv:
-        with open("group13.csv", "w", newline="") as file:
-            writer = csv.writer(file)
-            writer.writerow(
-                [
-                    "Year",
-                    "Input",
-                    "Gerd_storage",
-                    "Gerd_release",
-                    "Roseires_storage",
-                    "Roseires_release",
-                    "Sennar_storage",
-                    "Sennar_release",
-                    "Had_storage",
-                    "Had_release",
-                    "Gerd_production",
-                ]
-            )
-            for i in range(nu_of_timesteps):
-                rands, action = generateOutput()
-                (
-                    final_observation,
-                    final_reward,
-                    final_terminated,
-                    final_truncated,
-                    final_info,
-                ) = water_management_system.step(action)
-                writer.writerow(
-                    [
-                        i,
-                        rands,
-                        ensure_float(final_info.get("GERD")["stored_water"]),
-                        ensure_float(final_info.get("GERD")["current_release"]),
-                        ensure_float(final_info.get("Roseires")["stored_water"]),
-                        ensure_float(final_info.get("Roseires")["current_release"]),
-                        ensure_float(final_info.get("Sennar")["stored_water"]),
-                        ensure_float(final_info.get("Sennar")["current_release"]),
-                        ensure_float(final_info.get("HAD")["stored_water"]),
-                        ensure_float(final_info.get("HAD")["current_release"]),
-                        ensure_float(final_info.get("GERD_power_plant")["monthly_production"]),
-                    ]
-                )
-    else:
-        for _ in range(nu_of_timesteps):
-            action = water_management_system.action_space.sample()
-            print("Action:", action)
-            (
-                final_observation,
-                final_reward,
-                final_terminated,
-                final_truncated,
-                final_info,
-            ) = water_management_system.step(action)
-            print("Reward:", final_reward)
-            pprint.pprint(final_info)
-            print("Is finished:", final_truncated, final_terminated)
     return water_management_system
 
 
 def generateOutput():
     random_values = np.random.rand(
         4,
-    ) * [10000, 4000, 10000, 10000]
+    ) * [10000, 10000, 10000, 4000]
 
-    # Step 2: Create an OrderedDict with the specified keys and values
-    return random_values, OrderedDict(
-        [
-            ("GERD", np.array([random_values[0]], dtype=np.float64)),
-            ("HAD", np.array([random_values[1]], dtype=np.float64)),
-            ("Roseires", np.array([random_values[2]], dtype=np.float64)),
-            ("Sennar", np.array([random_values[3]], dtype=np.float64)),
-        ]
-    )
+    return random_values
 
 
 def ensure_float(value):
@@ -334,4 +299,4 @@ def ensure_float(value):
 
 
 if __name__ == "__main__":
-    nile_river_simulation(240)
+    nile_river_simulation()

@@ -162,4 +162,4 @@ class PowerPlant(Facility):
 
     def reset(self) -> None:
         super().reset()
-        self.production_sum = 0
+        self.production_vector = np.empty(0, dtype=np.float64)
