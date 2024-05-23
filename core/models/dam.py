@@ -105,8 +105,10 @@ class Dam(ControlledFacility):
             31,  # December
         ]
 
+        # self.water_level = self.storage_to_level(self.stored_water)
+
     def determine_reward(self) -> float:
-        return self.objective_function(self.stored_water)
+        return self.objective_function(self.storage_to_level(self.stored_water))
 
     def determine_release_limit(self) -> Tuple[float, float]:
         current_level = self.determine_current_level()
