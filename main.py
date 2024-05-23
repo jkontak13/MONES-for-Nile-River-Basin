@@ -1,7 +1,6 @@
 import numpy as np
 from pathlib import Path
 import pprint
-from gymnasium import Space
 from gymnasium.spaces import Box
 from core.envs.water_management_system import WaterManagementSystem
 from core.models.dam import Dam
@@ -53,8 +52,7 @@ def create_nile_river_env():
     )
     GERD_power_plant = PowerPlant(
         "GERD_power_plant",
-        # Objective.identity,
-        Objective.scalar_identity,
+        Objective.identity,
         "ethiopia_power",
         efficiency=0.93,
         max_turbine_flow=4320,
@@ -226,7 +224,7 @@ def create_nile_river_env():
             "HAD_minimum_water_level": 0,
         },
         seed=2137,
-        step_limit=24,  # Use low horizon for local training
+        step_limit=120,  # Use lower horizon for local training
     )
     return water_management_system
 
