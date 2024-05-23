@@ -224,7 +224,7 @@ def create_nile_river_env():
             "HAD_minimum_water_level": 0,
         },
         seed=2137,
-        step_limit=120,  # Use lower horizon for local training
+        step_limit=12,  # Use lower horizon for local training
     )
     return water_management_system
 

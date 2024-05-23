@@ -1,5 +1,10 @@
+import time
+from pprint import pprint
+
+import h5py
 import numpy as np
 import torch
+from matplotlib import pyplot as plt
 from torch import nn
 
 from core.learners.mones import MONES
@@ -28,24 +33,88 @@ class Actor(nn.Module):
         return a
 
 
-if __name__ == "__main__":
-    logdir = "runs/"
-    logdir += datetime.now().strftime("%Y-%m-%d_%H-%M-%S_") + str(uuid.uuid4())[:4] + "/"
-
+def train_agent(logdir):
     number_of_objectives = 4
     number_of_actions = 4
     agent = MONES(
         create_nile_river_env,
         Actor(number_of_objectives, number_of_actions, hidden=50),
-        n_population=10,
-        n_runs=5,
+        n_population=5,
+        n_runs=2,
         logdir=logdir,
         indicator="hypervolume",
-        # More thought needs to be put into this reference point. It seems to work for now.
-        ref_point=np.array([-50000, -100000000, -100000000, -50000]),
+        ref_point=np.array([0, -94210.39, -422150.04, 0]),
     )
-
+    timer = time.time()
     agent.train(10)
-    print("Distribution:", agent.dist)
+    print(f"Training took: {time.time() - timer} seconds")
+
     print("Logdir:", logdir)
-    torch.save({" dist": agent.dist, " policy": agent.policy}, logdir + "checkpoint.pt")
+    torch.save({"dist": agent.dist, "policy": agent.policy}, logdir + "checkpoint.pt")
+
+
+def run_agent(logdir):
+    # Load agent
+    checkpoint = torch.load(logdir)
+    print(checkpoint)
+    agent = checkpoint["policy"]
+
+    timesteps = 12
+    env = create_nile_river_env()
+    obs, _ = env.reset(seed=2137)
+    for _ in range(timesteps):
+        action = agent.forward(torch.from_numpy(obs).float())
+        action = action.detach().numpy().flatten()
+        print("Action:")
+        pprint(action)
+        (
+            final_observation,
+            final_reward,
+            final_terminated,
+            final_truncated,
+            final_info,
+        ) = env.step(action)
+        print("Reward:")
+        pprint(final_reward)
+
+
+def show_logs(logdir):
+    with h5py.File(logdir, "r") as f:
+        # Print all root level object names (aka keys)
+        # these can be group or dataset names
+        print("Keys: %s" % f.keys())
+        # get first object name/key; may or may NOT be a group
+        a_group_key = list(f.keys())[0]
+
+        # get the object type for a_group_key: usually group or dataset
+        print(type(f[a_group_key]))
+
+        # If a_group_key is a group name,
+        # this gets the object names in the group and returns as a list
+        data = list(f[a_group_key])
+        print(data)
+
+        group = f['train']
+        print("Hypervolume:", group['hypervolume'][()])
+        print("Indicator metric:", group['metric'][()])
+        # print(group['returns']['ndarray'][()])
+        # print(group['returns']['step'][()])
+
+        plt.plot(group['hypervolume'][()][:, 0], group['hypervolume'][()][:, 1])
+        plt.show()
+
+
+if __name__ == "__main__":
+    logdir = "runs/"
+    logdir += datetime.now().strftime("%Y-%m-%d_%H-%M-%S_") + str(uuid.uuid4())[:4] + "/"
+
+
+    train_agent(logdir)
+
+    # Trained agent path
+    # logdir = "runs/2024-05-20_14-25-12_bca4/checkpoint.pt"
+    # run_agent(logdir)
+
+    # Read log file
+    # logdir = "runs/2024-05-21_23-21-58_1c89/log.h5"
+    # show_logs(logdir)

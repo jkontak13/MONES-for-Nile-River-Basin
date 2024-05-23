@@ -39,12 +39,14 @@ def run_episode(env, model):
             # temp_time = time.time()
             action = model(torch.from_numpy(o).float())
             action = action.detach().numpy().flatten()
+            # print("Actions")
             # print(f"Model took \t {time.time() - temp_time} seconds")
         n_o, r, terminated, truncated, _ = env.step(action)
         e_r += r
         o = n_o
         if terminated or truncated:
             done = True
+    # print("Summed reward:", e_r)
     return torch.from_numpy(e_r).float()
 
 

@@ -72,7 +72,7 @@ class WaterManagementSystem(gym.Env):
         self.observation: np.array = self._determine_observation()
         # Reset rewards
         for key in self.rewards.keys():
-            self.rewards[key] = 0g
+            self.rewards[key] = 0
 
         for water_system in self.water_systems:
             water_system.reset()
