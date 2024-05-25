@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+import numpy as np
 from gymnasium.spaces import Space
 from gymnasium.core import ObsType, ActType
 from typing import SupportsFloat, Tuple
@@ -11,6 +12,7 @@ class Facility(ABC):
         self.timestep: int = 0
         self.inflow: float = 0
         self.outflow: float = 0
+        self.inflow_vector = np.empty(0, dtype=np.float64)
 
         self.objective_function = objective_function
         self.objective_name = objective_name
@@ -34,8 +36,18 @@ class Facility(ABC):
         return False
 
     def step(self) -> Tuple[ObsType, float, bool, bool, dict]:
+        self.inflow_vector = np.append(self.inflow_vector, self.inflow)
+
+        if self.name == "Hassanab_irr":
+            # If inflow_vector has only one element, set inflow to the initial value
+            if len(self.inflow_vector) == 1:
+                self.inflow = 934.2
+            else:
+                # Get the previous inflow
+                self.inflow = self.inflow_vector[-2]
+
         self.outflow = self.inflow - self.determine_consumption()
-        # TODO: Determine if we need to satisy any terminating codnitions for facility.
+        # TODO: Determine if we need to satisfy any terminating conditions for facility.
         reward = self.determine_reward()
         terminated = self.is_terminated()
         truncated = self.is_truncated()
