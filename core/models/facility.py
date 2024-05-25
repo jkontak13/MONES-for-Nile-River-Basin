@@ -61,6 +61,7 @@ class Facility(ABC):
         self.timestep: int = 0
         self.inflow: float = 0
         self.outflow: float = 0
+        self.inflow_vector = np.empty(0, dtype=np.float64)
 
 
 class ControlledFacility(ABC):
@@ -133,3 +134,4 @@ class ControlledFacility(ABC):
         self.timestep: int = 0
         self.inflow: float = 0
         self.outflow: float = 0
+

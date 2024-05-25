@@ -30,7 +30,7 @@ class Actor(nn.Module):
         a = self.fc1(state.T)
         a = torch.tanh(a)
         a = self.fc2(a)
-        return a
+        return 100*a
 
 
 def train_agent(logdir, iterations=5, n_population=10, n_runs=1, parallel=False):
@@ -39,12 +39,11 @@ def train_agent(logdir, iterations=5, n_population=10, n_runs=1, parallel=False)
     ref_point_1_year = [0, -21107.50, -4710.52, 0]
     ref_point_2_years = [0, -42215.00, -9421.04, 0]
     ref_point_20_years = [0, -94210.39, -422150.04, 0]
-
-    number_of_objectives = 4
+    number_of_observations = 5
     number_of_actions = 4
     agent = MONES(
         create_nile_river_env,
-        Actor(number_of_objectives, number_of_actions, hidden=50),
+        Actor(number_of_observations, number_of_actions, hidden=50),
         n_population=n_population,
         n_runs=n_runs,
         logdir=logdir,

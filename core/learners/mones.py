@@ -236,4 +236,3 @@ class MONES(object):
                 # print(f"Run took \t {time.time() - temp_time} seconds")
             returns[i] = torch.mean(p_return, dim=0)
         return returns
-
