@@ -1,5 +1,5 @@
 from core.models.facility import Facility
-from typing import List
+from typing import List, Optional
 
 
 class IrrigationSystem(Facility):
@@ -28,8 +28,8 @@ class IrrigationSystem(Facility):
         Returns info about the irrigation sustem
     """
 
-    def __init__(self, name: str, all_demand: List[float], objective_function, objective_name: str) -> None:
-        super().__init__(name, objective_function, objective_name)
+    def __init__(self, name: str, all_demand: List[float], objective_function, objective_name: str, default_inflow: Optional[float] = None) -> None:
+        super().__init__(name, objective_function, objective_name, default_inflow=default_inflow)
         self.all_demand: List[float] = all_demand
         self.total_deficit = 0
         self.all_deficit: List[float] = []

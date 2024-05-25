@@ -2,16 +2,18 @@ from abc import ABC, abstractmethod
 import numpy as np
 from gymnasium.spaces import Space
 from gymnasium.core import ObsType, ActType
-from typing import SupportsFloat, Tuple
+from typing import SupportsFloat, Tuple, Optional
 from core.models.objective import Objective
 
 
 class Facility(ABC):
-    def __init__(self, name: str, objective_function=Objective.no_objective, objective_name: str = "") -> None:
+    def __init__(self, name: str, objective_function=Objective.no_objective, objective_name: str = "", default_inflow: Optional[float] = None
+) -> None:
         self.name: str = name
         self.timestep: int = 0
         self.all_inflow: list[float] = []
         self.all_outflow: list[float] = []
+        self.default_inflow = default_inflow
 
         self.objective_function = objective_function
         self.objective_name = objective_name
@@ -35,10 +37,10 @@ class Facility(ABC):
         return False
 
     def get_outflow_at_timestep(self, timestep: int) -> float:
-        if timestep < 0:
-            return self.all_outflow[0]
+        if timestep < 0 and self.default_inflow:
+            return self.default_inflow
         else:
-            return self.all_outflow[timestep]
+            return self.all_outflow[max(0, timestep)]
 
     def set_inflow(self, timestep: int, inflow: float) -> None:
         if len(self.all_inflow) != timestep:
@@ -73,6 +75,7 @@ class ControlledFacility(ABC):
         objective_function=Objective.no_objective,
         objective_name: str = "",
         max_capacity: float = float("Inf"),
+        default_inflow: Optional[float] = None,
     ) -> None:
         self.name: str = name
         self.timestep: int = 0
@@ -86,6 +89,7 @@ class ControlledFacility(ABC):
         self.objective_name = objective_name
 
         self.max_capacity: float = max_capacity
+        self.default_inflow = default_inflow
 
     @abstractmethod
     def determine_reward(self) -> float:
@@ -111,10 +115,10 @@ class ControlledFacility(ABC):
         return False
 
     def get_outflow_at_timestep(self, timestep: int) -> float:
-        if timestep < 0:
-            return self.all_outflow[0]
+        if timestep < 0 and self.default_inflow:
+            return self.default_inflow
         else:
-            return self.all_outflow[timestep]
+            return self.all_outflow[max(0, timestep)]
 
     def set_inflow(self, timestep: int, inflow: float) -> None:
         if len(self.all_inflow) != timestep:

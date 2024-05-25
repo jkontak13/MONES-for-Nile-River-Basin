@@ -1,10 +1,10 @@
 from core.models.facility import Facility
-from typing import List
+from typing import List, Optional
 
 
 class Catchment(Facility):
-    def __init__(self, name: str, all_water_accumulated: List[float]) -> None:
-        super().__init__(name)
+    def __init__(self, name: str, all_water_accumulated: List[float], default_inflow: Optional[float] = None) -> None:
+        super().__init__(name, default_inflow=default_inflow)
         self.all_water_accumulated: List[float] = all_water_accumulated
 
     def determine_reward(self) -> float:

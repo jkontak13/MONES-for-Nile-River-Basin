@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import Tuple, Optional
 from pathlib import Path
 from core.models.facility import ControlledFacility
 from gymnasium.spaces import Box, Space
@@ -63,8 +63,9 @@ class Dam(ControlledFacility):
         objective_name: str = "",
         max_capacity: float = float("Inf"),
         stored_water: float = 0,
+        default_inflow: Optional[float] = None,
     ) -> None:
-        super().__init__(name, observation_space, action_space, max_capacity)
+        super().__init__(name, observation_space, action_space, max_capacity, default_inflow=default_inflow)
         self.stored_water: float = stored_water
 
         self.evap_rates = np.loadtxt(dam_data_directory / f"evap_{name}.txt")

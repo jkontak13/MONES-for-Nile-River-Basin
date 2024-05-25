@@ -1,6 +1,7 @@
 from core.models.facility import Facility
 from core.models.dam import Dam
 from scipy.constants import g
+from typing import Optional
 import numpy as np
 
 
@@ -50,8 +51,9 @@ class PowerPlant(Facility):
         dam: Dam = None,
         # TODO: determine actual water usage for power plants, 0.0 for ease now
         water_usage: float = 0.0,
+        default_inflow: Optional[float] = None,
     ) -> None:
-        super().__init__(name, objective_function, objective_name)
+        super().__init__(name, objective_function, objective_name, default_inflow=default_inflow)
         self.efficiency = efficiency
         self.max_turbine_flow = max_turbine_flow
         self.head_start_level = head_start_level
