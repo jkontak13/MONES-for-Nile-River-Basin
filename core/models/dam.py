@@ -102,7 +102,8 @@ class Dam(ControlledFacility):
         # self.water_level = self.storage_to_level(self.stored_water)
 
     def determine_reward(self) -> float:
-        return self.objective_function(self.stored_water)
+        # Pass water level to reward function
+        return self.objective_function(self.storage_to_level(self.stored_water))
 
     def determine_outflow(self, action: float) -> float:
         # Timestep is one month
