@@ -24,11 +24,8 @@ def nile_river_simulation(nu_of_timesteps=240):
 
     water_management_system = create_nile_river_env()
 
-    # Simulate for 3 timesteps (3 months).
-
-    # Simulate for 3 timestamps (3 months).
     if make_csv:
-        with open("group13.csv", "w", newline="") as file:
+        with open("verification/group13.csv", "w", newline="") as file:
             writer = csv.writer(file)
             writer.writerow(
                 [
@@ -276,7 +273,7 @@ def create_nile_river_env():
             "HAD_minimum_water_level": 0,
         },
         seed=2137,
-        step_limit=12,  # Use lower horizon for local training
+        step_limit=240,  # Use lower horizon for local training
     )
 
     return water_management_system
