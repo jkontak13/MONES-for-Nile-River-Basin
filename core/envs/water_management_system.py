@@ -85,7 +85,7 @@ class WaterManagementSystem(gym.Env):
         final_truncated = False
         final_info = {}
 
-        #Reset rewards
+        # Reset rewards
         for key in self.rewards.keys():
             self.rewards[key] = 0
 

@@ -94,20 +94,19 @@ def show_logs(logdir):
         data = list(f[a_group_key])
         print(data)
 
-        group = f['train']
-        print("Hypervolume:", group['hypervolume'][()])
-        print("Indicator metric:", group['metric'][()])
+        group = f["train"]
+        print("Hypervolume:", group["hypervolume"][()])
+        print("Indicator metric:", group["metric"][()])
         # print(group['returns']['ndarray'][()])
         # print(group['returns']['step'][()])
 
-        plt.plot(group['hypervolume'][()][:, 0], group['hypervolume'][()][:, 1])
+        plt.plot(group["hypervolume"][()][:, 0], group["hypervolume"][()][:, 1])
         plt.show()
 
 
 if __name__ == "__main__":
     logdir = "runs/"
     logdir += datetime.now().strftime("%Y-%m-%d_%H-%M-%S_") + str(uuid.uuid4())[:4] + "/"
-
 
     train_agent(logdir)
 

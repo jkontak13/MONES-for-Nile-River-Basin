@@ -195,7 +195,6 @@ def create_nile_river_env():
         float("inf"),
     )
 
-
     SukiToSennar_catchment = Catchment(
         "SukiToSennar_catchment", np.loadtxt(data_directory / "catchments" / "InflowSukiToSennar.txt")
     )
