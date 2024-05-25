@@ -1,16 +1,11 @@
 import time
-from pprint import pprint
-
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 import numpy as np
 import copy
-
-from gymnasium import Space, spaces
-
 from core.learners.metrics import non_dominated, non_dominated_rank, crowding_distance, compute_hypervolume
 from core.log.logger import Logger
+import concurrent.futures
 
 
 def n_parameters(model):
@@ -33,20 +28,15 @@ def run_episode(env, model):
 
     while not done:
         with torch.no_grad():
-            # pprint(o)
             # Delete [:, None], because it's not necessary to reshape the input
             # when the observations are 1D array
-            # temp_time = time.time()
-            action = model(torch.from_numpy(o).float())
+            action = model(torch.from_numpy(o).float()[:, None])
             action = action.detach().numpy().flatten()
-            # print("Actions")
-            # print(f"Model took \t {time.time() - temp_time} seconds")
         n_o, r, terminated, truncated, _ = env.step(action)
         e_r += r
         o = n_o
         if terminated or truncated:
             done = True
-    # print("Summed reward:", e_r)
     return torch.from_numpy(e_r).float()
 
 
@@ -84,10 +74,39 @@ def indicator_non_dominated(points):
     return indicator
 
 
+def evaluate_individual(make_env, individual, n_runs, n_objectives, seed):
+    env = make_env()
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+
+    p_return = torch.zeros(n_runs, n_objectives)
+    for r in range(n_runs):
+        p_return[r] = run_episode(env, individual)
+    return torch.mean(p_return, dim=0)
+
+
+def evaluate_population_parallel(make_env, population, n_runs, n_objectives):
+    """
+    DOESN'T WORK. For some reason each env happens to have exactly the same final reward.
+    """
+    returns = torch.zeros(len(population), n_objectives)
+    seeds = np.random.randint(0, 2**31 - 1, size=len(population))
+
+    with concurrent.futures.ProcessPoolExecutor() as executor:
+        futures = []
+        for i, individual in enumerate(population):
+            futures.append(executor.submit(evaluate_individual, make_env, individual, n_runs, n_objectives, seeds[i]))
+
+        for i, future in enumerate(concurrent.futures.as_completed(futures)):
+            returns[i] = future.result()
+
+    return returns
+
+
 class MONES(object):
 
     def __init__(
-        self, make_env, policy, n_population=1, n_runs=1, indicator="non_dominated", ref_point=None, logdir="runs"
+        self, make_env, policy, n_population=1, n_runs=1, indicator="non_dominated", ref_point=None, logdir="runs", parallel=False
     ):
         self.make_env = make_env
         self.policy = policy
@@ -100,6 +119,8 @@ class MONES(object):
 
         self.logdir = logdir
         self.logger = Logger(self.logdir)
+
+        self.parallel = parallel
 
         if indicator == "hypervolume":
             assert ref_point is not None, "reference point is needed for hypervolume indicator"
@@ -126,32 +147,39 @@ class MONES(object):
         # using current theta, sample policies from Normal(theta)
         population, z = self.sample_population()
         # run episode for these policies
-        returns = self.evaluate_population(self.make_env(), population)
+        eval_time = time.time()
+        # run population on multiple cores
+        if self.parallel:
+            returns = evaluate_population_parallel(self.make_env, population, self.n_runs, self.n_objectives)
+        else:
+            returns = self.evaluate_population(self.make_env(), population)
         returns = returns.detach().numpy()
+        print(f"Population evaluation took: {time.time() - eval_time} seconds")
 
         indicator_metric = self.indicator(returns)
-        metric = torch.tensor(indicator_metric)[:, None]
+        metric = torch.tensor(indicator_metric, dtype=torch.float64)[:, None]
 
         # use fitness ranking TODO doesn't help
         # returns = centered_ranking(returns)
         # standardize the rewards to have a gaussian distribution
-        metric = (metric - torch.mean(metric, dim=0)) / torch.std(metric, dim=0)
+        epsilon = 1e-8  # Small value for numerical stability
+        metric = (metric - torch.mean(metric, dim=0)) / (torch.std(metric, dim=0) + epsilon)
 
         # compute loss
         log_prob = self.dist.log_prob(z).sum(1, keepdim=True)
-
         mu, sigma = self.dist.mean, self.dist.scale
 
         # directly compute inverse Fisher Information Matrix (FIM)
         # only works because we use gaussian (and no correlation between variables)
-        fim_mu_inv = torch.diag(sigma.detach() ** 2)
-        fim_sigma_inv = torch.diag(sigma.detach() ** 4 * 2)
+        fim_mu_inv = torch.diag(sigma.detach() ** 2 + epsilon)
+        fim_sigma_inv = torch.diag(sigma.detach() ** 4 * 2 + epsilon)
 
         loss = -log_prob * metric
 
         # update distribution parameters
         self.opt.zero_grad()
         loss.mean().backward()
+
         # now that we have grads, multiply them with FIM_INV
         nat_grad_mu = fim_mu_inv @ mu.grad
         nat_grad_sigma = fim_sigma_inv @ sigma.grad
@@ -208,3 +236,4 @@ class MONES(object):
                 # print(f"Run took \t {time.time() - temp_time} seconds")
             returns[i] = torch.mean(p_return, dim=0)
         return returns
+
