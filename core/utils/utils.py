@@ -3,7 +3,7 @@ import numpy as np
 LIST_SPECIFIC_CHARACTERS = "[],"
 
 
-def generate_random_actions(number_of_actions=4, seed=42):
+def generate_random_actions(number_of_actions=4, seed=42) -> np.ndarray:
     np.random.seed(seed)
     return np.random.rand(4) * [10000, 10000, 10000, 4000]
 

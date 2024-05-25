@@ -10,7 +10,7 @@ from core.models.irrigation_system import IrrigationSystem
 from core.models.catchment import Catchment
 
 
-def create_nile_river_env():
+def create_nile_river_env() -> WaterManagementSystem:
     # Ethiopia
     GERD_dam = Dam(
         "GERD",

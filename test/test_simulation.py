@@ -23,7 +23,7 @@ COLUMNS_INFO_TO_VERIFY = [
 ]
 
 
-def test_simulation():
+def test_simulation() -> None:
     water_management_system = create_nile_river_env()
 
     simulation_run = load_simulation_run_from_file(
@@ -39,7 +39,9 @@ def test_simulation():
         assert get_info_for_verification(final_info) == approx(info_to_verify, rel=0.1)
 
 
-def load_simulation_run_from_file(file_name: Path, column_action_to_run: str, columns_to_verify: list[str]):
+def load_simulation_run_from_file(
+    file_name: Path, column_action_to_run: str, columns_to_verify: list[str]
+) -> list[dict]:
     simulation_run_file = pd.read_csv(file_name)
 
     simulation_run = []
