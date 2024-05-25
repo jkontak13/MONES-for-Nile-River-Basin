@@ -1,5 +1,7 @@
 from core.models.facility import Facility
 from core.models.dam import Dam
+from scipy.constants import g
+import numpy as np
 
 
 class PowerPlant(Facility):
@@ -23,8 +25,6 @@ class PowerPlant(Facility):
     water_level_coeff : float
         Coefficient that determines the water level based on the volume of outflow
         Used to calculate at what level the head of the power plant operates
-    operating_hours : float
-        Amount of hours that the plant operates, used to calculate power generation
     water_usage : float
         Amount of water  that is used by plant, decimal coefficient
 
@@ -48,8 +48,6 @@ class PowerPlant(Facility):
         head_start_level: float,
         max_capacity: float,
         dam: Dam = None,
-        # TODO: find out if operating hours for power plants differ
-        operating_hours: float = 24 * 30,
         # TODO: determine actual water usage for power plants, 0.0 for ease now
         water_usage: float = 0.0,
     ) -> None:
@@ -59,36 +57,38 @@ class PowerPlant(Facility):
         self.head_start_level = head_start_level
         self.max_capacity = max_capacity
         self.dam = dam
-        self.operating_hours = operating_hours
         self.water_usage = water_usage
-        self.production_sum = 0
+        self.production_vector = np.empty(0, dtype=np.float64)
+
+        self.nu_of_days_per_month = [
+            31,  # January
+            28,  # February (non-leap year)
+            31,  # March
+            30,  # April
+            31,  # May
+            30,  # June
+            31,  # July
+            31,  # August
+            30,  # September
+            31,  # October
+            30,  # November
+            31,  # December
+        ]
 
     # Constants are configured as parameters with default values
-    def determine_production(
-        self,
-        m3_to_kg_factor: int = 1000,
-        w_mw_conversion: float = 1e-6,
-        g: float = 9.81,
-    ) -> float:
+    def determine_production(self) -> float:
         """
         Calculates power production in MWh.
-
-        Parameters:
-        ----------
-        m3_to_kg_factor : int
-            Factor to multiply by, to go from m3 to kg
-        w_mw_conversion : float
-            Factor to convert W to mW
-        g : float
-            Gravity constant
 
         Returns:
         ----------
         float
             Plant's power production in mWh
         """
+        m3_to_kg_factor: int = 1000
+        w_mw_conversion: float = 1e-6
         # Turbine flow is equal to outflow, as long as it does not exceed maximum turbine flow
-        turbine_flow = min(self.dam.outflow, self.max_turbine_flow)
+        turbine_flow = min(self.dam.release_vector[-1], self.max_turbine_flow)
 
         # Uses water level from dam to determine water level
         water_level = self.dam.determine_current_level() if self.dam.level_vector else 0
@@ -101,13 +101,13 @@ class PowerPlant(Facility):
             turbine_flow * head * m3_to_kg_factor * g * self.efficiency * w_mw_conversion,
         )
 
-        # Hydro-energy power production in mWh
-        production = power_in_mw * self.operating_hours
+        nu_days = self.nu_of_days_per_month[self.determine_month()]
+        total_hours = nu_days * 24
 
-        # TODO: change function for hydro-energy power production to be an actual reward
-        #       (adapt it to the specific objective such as minimising months below minimum power production)
-        #       possibly use months and production_sum attributes to calculate monthly or yearly averages
-        self.production_sum += production
+        # Hydro-energy power production in mWh
+        production = power_in_mw * total_hours
+
+        self.production_vector = np.append(self.production_vector, production)
 
         return production
 
@@ -151,10 +151,15 @@ class PowerPlant(Facility):
             "name": self.name,
             "inflow": self.inflow,
             "outflow": self.outflow,
+            "monthly_production": self.production_vector[-1],
             "water_usage": self.water_usage,
-            "total production (MWh)": self.production_sum,
+            "total production (MWh)": sum(self.production_vector),
         }
+
+
+    def determine_month(self):
+        return self.timestep % 12
 
     def reset(self) -> None:
         super().reset()
-        self.production_sum = 0
+        self.production_vector = np.empty(0, dtype=np.float64)

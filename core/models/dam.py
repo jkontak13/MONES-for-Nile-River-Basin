@@ -6,6 +6,7 @@ import numpy as np
 from numpy.core.multiarray import interp as compiled_interp
 from array import array
 from bisect import bisect_right
+import decimal
 
 dam_data_directory = Path(__file__).parents[1] / "data" / "dams"
 
@@ -36,12 +37,8 @@ class Dam(ControlledFacility):
 
     Methods
     -------
-    determine_current_level()
-        Returns current water level
     determine_info()
         Return dictionary with parameters of the dam.
-    determine_release_limit()
-        Return min and max release based on current water level.
     storage_to_level(h=float)
         Returns the level(height) based on volume.
     level_to_storage(s=float)
@@ -66,7 +63,6 @@ class Dam(ControlledFacility):
         objective_name: str = "",
         max_capacity: float = float("Inf"),
         stored_water: float = 0,
-        release_limits: dict = None,
     ) -> None:
         super().__init__(name, observation_space, action_space, max_capacity)
         self.stored_water: float = stored_water
@@ -76,18 +72,16 @@ class Dam(ControlledFacility):
         self.storage_to_level_rel = np.loadtxt(dam_data_directory / f"store_level_rel_{name}.txt")
         self.storage_to_surface_rel = np.loadtxt(dam_data_directory / f"store_sur_rel_{name}.txt")
 
-        self.storage_vector = array("f", [])
-        self.level_vector = array("f", [])
-        self.inflow_vector = array("f", [])
-        self.release_vector = array("f", [])
+        self.storage_vector = []
+        self.level_vector = []
+        self.inflow_vector = []
+        self.release_vector = []
 
         # Initialise storage vector
         self.storage_vector.append(stored_water)
 
         self.objective_function = objective_function
         self.objective_name = objective_name
-
-        self.release_limits = release_limits
 
         # TODO: Read it from file
         self.nu_of_days_per_month = [
@@ -108,40 +102,9 @@ class Dam(ControlledFacility):
         # self.water_level = self.storage_to_level(self.stored_water)
 
     def determine_reward(self) -> float:
-        return self.objective_function(self.storage_to_level(self.stored_water))
-
-    def determine_release_limit(self) -> Tuple[float, float]:
-        current_level = self.determine_current_level()
-        if not current_level:
-            current_level = self.storage_to_level(self.stored_water)
-
-        self.release_range = None
-        max = 0
-
-        # Water release limits are given by water level and corresponding min and max
-        # Therefore we want to find the maximum water level that is smaller than the current water level
-        for level in self.release_limits.keys():
-            if (level >= max) and (level <= current_level):
-                max = level
-                self.release_range = self.release_limits[level]
-        if self.release_range:
-            return self.release_range[0], self.release_range[1]
-        else:
-            return None, None
+        return self.objective_function(self.stored_water)
 
     def determine_outflow(self, action: float) -> float:
-        # Clip action to release limits
-        # (First wanted to implement this in ControlledFacility class but it doesn't have a level attribute)
-        # Also looked into the option of using ActionWrapper but that is applied on gym.Env
-        if self.release_limits:
-            min_release, max_release = self.determine_release_limit()
-            # Check if function did not return tuple of Nones
-            if min_release:
-                # Clip action value between min and max release
-                action = min(max_release, max(min_release, action))
-
-        # TODO: Make timestep flexible for now it is hardcoded (one month)
-
         # Timestep is one month
         # Get the number of days in the month
         nu_days = self.nu_of_days_per_month[self.determine_month()]
@@ -151,6 +114,9 @@ class Dam(ControlledFacility):
         total_seconds = total_hours * 3600
         # Calculate integration step
         integ_step = total_seconds / (nu_days * 48)
+
+        self.inflow_vector = np.append(self.inflow_vector, self.inflow)
+
         # Calculate outflow using integration function
         outflow = self.integration(
             total_seconds,
@@ -159,9 +125,6 @@ class Dam(ControlledFacility):
             integ_step,
         )
         return outflow
-
-    def determine_current_level(self) -> float:
-        return self.level_vector[-1] if self.level_vector else None
 
     def determine_info(self) -> dict:
         info = {
@@ -188,17 +151,17 @@ class Dam(ControlledFacility):
     def storage_to_surface(self, s: float) -> float:
         return self.modified_interp(s, self.storage_to_surface_rel[0], self.storage_to_surface_rel[1])
 
-    def storage_to_minmax(self, s: float) -> Tuple[float, float]:
-        # For minimum release constraint, we regard the data points as a step function
-        # such that once a given storage/elevation is surpassed, we have to release a
-        # certain given amount. For maximum, we use interpolation as detailed discharge
-        # capacity calculations are made for certain points
+    def level_to_minmax(self, h):
+        return (
+            np.interp(h, self.rating_curve[0], self.rating_curve[1]),
+            np.interp(h, self.rating_curve[0], self.rating_curve[2]),
+        )
 
-        minimum_index = max(bisect_right(self.storage_to_minmax_rel[0], s), 1)
-        minimum_cons = self.storage_to_minmax_rel[1][minimum_index - 1]
-        maximum_cons = self.modified_interp(s, self.storage_to_minmax_rel[0], self.storage_to_minmax_rel[2])
-
-        return minimum_cons, maximum_cons
+    def storage_to_minmax(self, s):
+        return (
+            np.interp(s, self.storage_to_minmax_rel[0], self.storage_to_minmax_rel[1]),
+            np.interp(s, self.storage_to_minmax_rel[0], self.storage_to_minmax_rel[2]),
+        )
 
     def integration(
         self,
@@ -228,9 +191,8 @@ class Dam(ControlledFacility):
         avg_monthly_release: float
             Average monthly release given in m3.
         """
-        self.inflow_vector = np.append(self.inflow_vector, net_inflow_per_second)
         current_storage = self.storage_vector[-1]
-        in_month_releases = array("f", [])
+        in_month_releases = np.empty(0, dtype=np.float64)
         monthly_evap_total = 0
         integ_step_count = total_seconds / integ_step
 
@@ -244,7 +206,7 @@ class Dam(ControlledFacility):
 
             release_per_second = min(max_possible_release, max(min_possible_release, release_action))
 
-            in_month_releases.append(release_per_second)
+            in_month_releases = np.append(in_month_releases, release_per_second)
 
             total_addition = net_inflow_per_second * integ_step
 
@@ -255,7 +217,7 @@ class Dam(ControlledFacility):
         self.stored_water = current_storage
 
         # Calculate the ouflow of water
-        avg_monthly_release = np.mean(in_month_releases)
+        avg_monthly_release = np.mean(in_month_releases, dtype=np.float64)
         self.release_vector.append(avg_monthly_release)
 
         # Record level based on storage for time t
@@ -273,6 +235,6 @@ class Dam(ControlledFacility):
         stored_water = self.storage_vector[0]
         self.storage_vector = [stored_water]
         self.stored_water = stored_water
-        self.level_vector = array("f", [])
-        self.inflow_vector = array("f", [])
-        self.release_vector = array("f", [])
+        self.level_vector = []
+        self.inflow_vector = []
+        self.release_vector = []

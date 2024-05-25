@@ -1,6 +1,9 @@
+import pprint
+from collections import OrderedDict
+
 import numpy as np
 from pathlib import Path
-import pprint
+from gymnasium import Space
 from gymnasium.spaces import Box
 from core.envs.water_management_system import WaterManagementSystem
 from core.models.dam import Dam
@@ -9,9 +12,12 @@ from core.models.objective import Objective
 from core.models.power_plant import PowerPlant
 from core.models.irrigation_system import IrrigationSystem
 from core.models.catchment import Catchment
+import csv
+
+make_csv = True
 
 
-def nile_river_simulation(nu_of_timesteps=3):
+def nile_river_simulation(nu_of_timesteps=240):
     # Create power plant, dam and irrigation system. Initialise with semi-random parameters.
     # Set objective functions to identity for power plant, minimum_water_level for dam and water_deficit_minimised
     # for irrigation system.
@@ -19,20 +25,66 @@ def nile_river_simulation(nu_of_timesteps=3):
     water_management_system = create_nile_river_env()
 
     # Simulate for 3 timesteps (3 months).
-    for _ in range(nu_of_timesteps):
-        action = water_management_system.action_space.sample()
-        action = np.array(list(action.values())).flatten()
-        print("Action:", action, "\n")
-        (
-            final_observation,
-            final_reward,
-            final_terminated,
-            final_truncated,
-            final_info,
-        ) = water_management_system.step(action)
-        print("Reward:", final_reward)
-        pprint.pprint(final_info)
-        print("Is finished:", final_truncated, final_terminated)
+
+    # Simulate for 3 timestamps (3 months).
+    if make_csv:
+        with open("group13.csv", "w", newline="") as file:
+            writer = csv.writer(file)
+            writer.writerow(
+                [
+                    "Year",
+                    "Input",
+                    "Gerd_storage",
+                    "Gerd_release",
+                    "Roseires_storage",
+                    "Roseires_release",
+                    "Sennar_storage",
+                    "Sennar_release",
+                    "Had_storage",
+                    "Had_release",
+                    "Gerd_production",
+                ]
+            )
+            np.random.seed(42)
+            for i in range(nu_of_timesteps):
+                action = generateOutput()
+                (
+                    final_observation,
+                    final_reward,
+                    final_terminated,
+                    final_truncated,
+                    final_info,
+                ) = water_management_system.step(action)
+                writer.writerow(
+                    [
+                        i,
+                        action,
+                        ensure_float(final_info.get("GERD")["stored_water"]),
+                        ensure_float(final_info.get("GERD")["current_release"]),
+                        ensure_float(final_info.get("Roseires")["stored_water"]),
+                        ensure_float(final_info.get("Roseires")["current_release"]),
+                        ensure_float(final_info.get("Sennar")["stored_water"]),
+                        ensure_float(final_info.get("Sennar")["current_release"]),
+                        ensure_float(final_info.get("HAD")["stored_water"]),
+                        ensure_float(final_info.get("HAD")["current_release"]),
+                        ensure_float(final_info.get("GERD_power_plant")["monthly_production"]),
+                    ]
+                )
+    else:
+        for _ in range(nu_of_timesteps):
+            action = water_management_system.action_space.sample()
+            action = np.array(list(action.values())).flatten()
+            print("Action:", action, "\n")
+            (
+                final_observation,
+                final_reward,
+                final_terminated,
+                final_truncated,
+                final_info,
+            ) = water_management_system.step(action)
+            print("Reward:", final_reward)
+            pprint.pprint(final_info)
+            print("Is finished:", final_truncated, final_terminated)
 
 
 def create_nile_river_env():
@@ -42,13 +94,7 @@ def create_nile_river_env():
         Box(low=0, high=80000000000),
         Box(0, 10000),
         Objective.no_objective,
-        stored_water=15000000000,
-        release_limits={
-            590: [0, 0],
-            591: [0, 10000],
-            630: [0, 10000],
-            640: [4000, 10000],
-        },
+        stored_water=15000000000.0,
     )
     GERD_power_plant = PowerPlant(
         "GERD_power_plant",
@@ -97,26 +143,14 @@ def create_nile_river_env():
         Box(low=0, high=80000000000),
         Box(0, 10000),
         Objective.no_objective,
-        stored_water=4570000000,
-        release_limits={
-            467: [0, 0],
-            475: [0, 10000],
-            481: [1000, 10000],
-            490: [4000, 10000],
-        },
+        stored_water=4571250000.0,
     )
     Sennar_dam = Dam(
         "Sennar",
         Box(low=0, high=80000000000),
         Box(0, 10000),
         Objective.no_objective,
-        stored_water=430000000,
-        release_limits={
-            417.2: [0, 0],
-            418: [0, 6000],
-            420: [0, 6000],
-            421.7: [4000, 10000],
-        },
+        stored_water=434925000.0,
     )
     # Egypt
     Egypt_irr_system = IrrigationSystem(
@@ -131,13 +165,7 @@ def create_nile_river_env():
         Box(0, 4000),
         Objective.minimum_water_level,
         "HAD_minimum_water_level",
-        stored_water=137000000000,
-        release_limits={
-            147: [0, 0],
-            148: [0, 4000],
-            175: [1000, 4000],
-            182: [4000, 4000],
-        },
+        stored_water=137025000000.0,
     )
     # Create 'edges' between Facilities.
     # TODO: determine max capacity for flows
@@ -145,22 +173,42 @@ def create_nile_river_env():
         "gerd_inflow",
         GERD_dam,
         float("inf"),
-        np.loadtxt(data_directory / "catchments" / "blue-nile.txt"),
+        np.loadtxt(data_directory / "catchments" / "InflowBlueNile.txt"),
+    )
+
+    GerdToRoseires_catchment = Catchment(
+        "GerdToRoseires_catchment", np.loadtxt(data_directory / "catchments" / "InflowGERDToRoseires.txt")
     )
     # TODO: add catchment 1 inflow to sources of Roseires (inflow with destination Roseires)
-    Roseires_flow = Flow("roseires_flow", [GERD_dam], Roseires_dam, float("inf"))
+
+    Roseires_flow = Flow("roseires_flow", [GERD_dam, GerdToRoseires_catchment], Roseires_dam, float("inf"))
+
+    RoseiresToAbuNaama_catchment = Catchment(
+        "RoseiresToAbuNaama_catchment", np.loadtxt(data_directory / "catchments" / "InflowRoseiresToAbuNaama.txt")
+    )
+
     # TODO: add catchment 2 inflow to sources of USSennar (inflow with destination USSennar)
     upstream_Sennar_received_flow = Flow(
         "upstream_Sennar_received_flow",
-        [Roseires_dam],
+        [Roseires_dam, RoseiresToAbuNaama_catchment],
         USSennar_irr_system,
         float("inf"),
     )
+
+
+    SukiToSennar_catchment = Catchment(
+        "SukiToSennar_catchment", np.loadtxt(data_directory / "catchments" / "InflowSukiToSennar.txt")
+    )
+
     # TODO: add catchment 3 inflow to sources of Sennar (inflow with destination USSennar)
-    Sennar_flow = Flow("sennar_flow", [USSennar_irr_system], Sennar_dam, float("inf"))
+    Sennar_flow = Flow("sennar_flow", [USSennar_irr_system, SukiToSennar_catchment], Sennar_dam, float("inf"))
+
     Gezira_received_flow = Flow("gezira_received_flow", [Sennar_dam], Gezira_irr_system, float("inf"))
-    Dinder_catchment = Catchment("dinder_catchment", np.loadtxt(data_directory / "catchments" / "dinder.txt"))
-    Rahad_catchment = Catchment("rahad_catchment", np.loadtxt(data_directory / "catchments" / "rahad.txt"))
+
+    Dinder_catchment = Catchment("dinder_catchment", np.loadtxt(data_directory / "catchments" / "InflowDinder.txt"))
+
+    Rahad_catchment = Catchment("rahad_catchment", np.loadtxt(data_directory / "catchments" / "InflowRahad.txt"))
+
     downstream_Sennar_received_flow = Flow(
         "downstream_sennar_received_flow",
         [Gezira_irr_system, Dinder_catchment, Rahad_catchment],
@@ -169,7 +217,7 @@ def create_nile_river_env():
     )
     WhiteNile_catchment = Catchment(
         "whitenile_catchment",
-        np.loadtxt(data_directory / "catchments" / "white-nile.txt"),
+        np.loadtxt(data_directory / "catchments" / "InflowWhiteNile.txt"),
     )
     Taminiat_received_flow = Flow(
         "taminiat_received_flow",
@@ -177,7 +225,9 @@ def create_nile_river_env():
         Tamaniat_irr_system,
         float("inf"),
     )
-    Atbara_catchment = Catchment("atbara_catchment", np.loadtxt(data_directory / "catchments" / "atbara.txt"))
+
+    Atbara_catchment = Catchment("atbara_catchment", np.loadtxt(data_directory / "catchments" / "InflowAtbara.txt"))
+
     # TODO: change Hassanab received flow to depend on leftover flow from Taminiat in previous month (see A.2.8)
     Hassanab_received_flow = Flow(
         "hassanab_received_flow",
@@ -194,10 +244,13 @@ def create_nile_river_env():
             GERD_inflow,
             GERD_dam,
             GERD_power_plant,
+            GerdToRoseires_catchment,
             Roseires_flow,
             Roseires_dam,
+            RoseiresToAbuNaama_catchment,
             upstream_Sennar_received_flow,
             USSennar_irr_system,
+            SukiToSennar_catchment,
             Sennar_flow,
             Sennar_dam,
             Gezira_received_flow,
@@ -226,7 +279,22 @@ def create_nile_river_env():
         seed=2137,
         step_limit=12,  # Use lower horizon for local training
     )
+
     return water_management_system
+
+
+def generateOutput():
+    random_values = np.random.rand(
+        4,
+    ) * [10000, 10000, 10000, 4000]
+
+    return random_values
+
+
+def ensure_float(value):
+    if isinstance(value, np.ndarray):
+        return value.item()
+    return value
 
 
 if __name__ == "__main__":
