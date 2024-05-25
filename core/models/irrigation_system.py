@@ -55,14 +55,14 @@ class IrrigationSystem(Facility):
     def determine_reward(self) -> float:
         """
         Calculates the reward given the objective function for this district.
-        Uses demand and consumption.
+        Uses demand and received water.
 
         Returns:
         ----------
         float
             Reward for the objective function.
         """
-        return self.objective_function(self.get_current_demand(), self.determine_consumption())
+        return self.objective_function(self.get_current_demand(), self.inflow)
 
     def determine_consumption(self) -> float:
         """
