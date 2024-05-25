@@ -79,12 +79,13 @@ class WaterManagementSystem(gym.Env):
         return self.observation, self._determine_info()
 
     def step(self, action: np.array) -> Tuple[np.array, np.array, bool, bool, dict]:
+        final_reward = {}
+
         # Reset rewards
         for key in self.rewards.keys():
-            self.rewards[key] = 0
+            final_reward[key] = 0
 
         final_observation = {}
-        final_reward = self.rewards
         final_terminated = False
         final_truncated = False
         final_info = {}
