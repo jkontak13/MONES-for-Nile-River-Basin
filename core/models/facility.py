@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+import numpy as np
 from gymnasium.spaces import Space
 from gymnasium.core import ObsType, ActType
 from typing import SupportsFloat, Tuple

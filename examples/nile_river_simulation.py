@@ -1,9 +1,5 @@
-import pprint
-from collections import OrderedDict
-
 import numpy as np
 from pathlib import Path
-from gymnasium import Space
 from gymnasium.spaces import Box
 from core.envs.water_management_system import WaterManagementSystem
 from core.models.dam import Dam
@@ -12,79 +8,9 @@ from core.models.objective import Objective
 from core.models.power_plant import PowerPlant
 from core.models.irrigation_system import IrrigationSystem
 from core.models.catchment import Catchment
-import csv
-
-make_csv = True
 
 
-def nile_river_simulation(nu_of_timesteps=240):
-    # Create power plant, dam and irrigation system. Initialise with semi-random parameters.
-    # Set objective functions to identity for power plant, minimum_water_level for dam and water_deficit_minimised
-    # for irrigation system.
-
-    water_management_system = create_nile_river_env()
-
-    if make_csv:
-        with open("verification/group13.csv", "w", newline="") as file:
-            writer = csv.writer(file)
-            writer.writerow(
-                [
-                    "Year",
-                    "Input",
-                    "Gerd_storage",
-                    "Gerd_release",
-                    "Roseires_storage",
-                    "Roseires_release",
-                    "Sennar_storage",
-                    "Sennar_release",
-                    "Had_storage",
-                    "Had_release",
-                    "Gerd_production",
-                ]
-            )
-            np.random.seed(42)
-            for i in range(nu_of_timesteps):
-                action = generateOutput()
-                (
-                    final_observation,
-                    final_reward,
-                    final_terminated,
-                    final_truncated,
-                    final_info,
-                ) = water_management_system.step(action)
-                writer.writerow(
-                    [
-                        i,
-                        action,
-                        ensure_float(final_info.get("GERD")["stored_water"]),
-                        ensure_float(final_info.get("GERD")["current_release"]),
-                        ensure_float(final_info.get("Roseires")["stored_water"]),
-                        ensure_float(final_info.get("Roseires")["current_release"]),
-                        ensure_float(final_info.get("Sennar")["stored_water"]),
-                        ensure_float(final_info.get("Sennar")["current_release"]),
-                        ensure_float(final_info.get("HAD")["stored_water"]),
-                        ensure_float(final_info.get("HAD")["current_release"]),
-                        ensure_float(final_info.get("GERD_power_plant")["monthly_production"]),
-                    ]
-                )
-    else:
-        for _ in range(nu_of_timesteps):
-            action = water_management_system.action_space.sample()
-            action = np.array(list(action.values())).flatten()
-            print("Action:", action, "\n")
-            (
-                final_observation,
-                final_reward,
-                final_terminated,
-                final_truncated,
-                final_info,
-            ) = water_management_system.step(action)
-            print("Reward:", final_reward)
-            pprint.pprint(final_info)
-            print("Is finished:", final_truncated, final_terminated)
-
-
-def create_nile_river_env():
+def create_nile_river_env() -> WaterManagementSystem:
     # Ethiopia
     GERD_dam = Dam(
         "GERD",
@@ -95,7 +21,8 @@ def create_nile_river_env():
     )
     GERD_power_plant = PowerPlant(
         "GERD_power_plant",
-        Objective.identity,
+        # Objective.identity,
+        Objective.scalar_identity,
         "ethiopia_power",
         efficiency=0.93,
         max_turbine_flow=4320,
@@ -103,7 +30,7 @@ def create_nile_river_env():
         max_capacity=6000,
         dam=GERD_dam,
     )
-    data_directory = Path(__file__).parent / "core" / "data"
+    data_directory = Path(__file__).parents[1] / "core" / "data"
     # Sudan
     DSSennar_irr_system = IrrigationSystem(
         "DSSennar_irr",
@@ -272,26 +199,8 @@ def create_nile_river_env():
             "egypt_deficit_minimised": 0,
             "HAD_minimum_water_level": 0,
         },
-        seed=2137,
-        step_limit=240,  # Use lower horizon for local training
+        seed=42,
+        step_limit=240,  # Use low horizon for local training
     )
 
     return water_management_system
-
-
-def generateOutput():
-    random_values = np.random.rand(
-        4,
-    ) * [10000, 10000, 10000, 4000]
-
-    return random_values
-
-
-def ensure_float(value):
-    if isinstance(value, np.ndarray):
-        return value.item()
-    return value
-
-
-if __name__ == "__main__":
-    nile_river_simulation()
