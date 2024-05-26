@@ -136,7 +136,7 @@ class Dam(ControlledFacility):
     def is_terminated(self) -> bool:
         return self.stored_water > self.max_capacity or self.stored_water < 0
 
-    def determine_month(self):
+    def determine_month(self) -> int:
         return self.timestep % 12
 
     def storage_to_level(self, s: float) -> float:
@@ -145,13 +145,13 @@ class Dam(ControlledFacility):
     def storage_to_surface(self, s: float) -> float:
         return self.modified_interp(s, self.storage_to_surface_rel[0], self.storage_to_surface_rel[1])
 
-    def level_to_minmax(self, h):
+    def level_to_minmax(self, h) -> tuple[np.ndarray, np.ndarray]:
         return (
             np.interp(h, self.rating_curve[0], self.rating_curve[1]),
             np.interp(h, self.rating_curve[0], self.rating_curve[2]),
         )
 
-    def storage_to_minmax(self, s):
+    def storage_to_minmax(self, s) -> tuple[np.ndarray, np.ndarray]:
         return (
             np.interp(s, self.storage_to_minmax_rel[0], self.storage_to_minmax_rel[1]),
             np.interp(s, self.storage_to_minmax_rel[0], self.storage_to_minmax_rel[2]),

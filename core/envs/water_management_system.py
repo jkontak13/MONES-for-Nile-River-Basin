@@ -3,10 +3,9 @@ from pprint import pprint
 
 import gymnasium as gym
 import numpy as np
-from gymnasium.spaces import Space, Dict
+from gymnasium.spaces import Box, Dict, Space
 from gymnasium.core import ObsType, RenderFrame
-from typing import Any, List, Union, Optional, Tuple
-
+from typing import Any, Union, Optional
 from core.models.dam import Dam
 from core.models.flow import Flow
 from core.models.facility import Facility, ControlledFacility
@@ -15,13 +14,13 @@ from core.models.facility import Facility, ControlledFacility
 class WaterManagementSystem(gym.Env):
     def __init__(
         self,
-        water_systems: List[Union[Facility, ControlledFacility, Flow]],
+        water_systems: list[Union[Facility, ControlledFacility, Flow]],
         rewards: dict,
         step_limit: int = float("inf"),
         seed: int = 42,
     ) -> None:
-        self.water_systems: List[Union[Facility, ControlledFacility, Flow]] = water_systems
-        self.rewards = rewards
+        self.water_systems: list[Union[Facility, ControlledFacility, Flow]] = water_systems
+        self.rewards: dict = rewards
         self.step_limit: int = step_limit
         self.timestep: int = 0
         self.seed: int = seed
@@ -31,7 +30,7 @@ class WaterManagementSystem(gym.Env):
 
         self.observation: np.array = self._determine_observation()
 
-        self.reward_space = gym.spaces.Box(-np.inf, np.inf, shape=(len(rewards.keys()),))
+        self.reward_space: Space = Box(-np.inf, np.inf, shape=(len(rewards.keys()),))
 
     def _determine_observation(self) -> np.array:
         result = []
@@ -65,7 +64,7 @@ class WaterManagementSystem(gym.Env):
         # TODO: decide on what we wnat to output in the info.
         return {"water_systems": self.water_systems}
 
-    def reset(self, seed: Optional[int] = None, options: Optional[dict] = None) -> Tuple[ObsType, dict[str, Any]]:
+    def reset(self, seed: Optional[int] = None, options: Optional[dict] = None) -> tuple[ObsType, dict[str, Any]]:
         # We need the following line to seed self.np_random.
         super().reset(seed=seed)
         self.timestep = 0
@@ -78,7 +77,7 @@ class WaterManagementSystem(gym.Env):
             water_system.reset()
         return self.observation, self._determine_info()
 
-    def step(self, action: np.array) -> Tuple[np.array, np.array, bool, bool, dict]:
+    def step(self, action: np.array) -> tuple[np.array, np.array, bool, bool, dict]:
         final_reward = {}
 
         # Reset rewards
@@ -133,6 +132,6 @@ class WaterManagementSystem(gym.Env):
         # TODO: implement if needed, e.g. for closing opened rendering frames.
         pass
 
-    def render(self) -> Union[RenderFrame, List[RenderFrame], None]:
+    def render(self) -> Union[RenderFrame, list[RenderFrame], None]:
         # TODO: implement if needed, for rendering simulation.
         pass

@@ -20,7 +20,7 @@ class Flow:
         self.max_capacity: float = max_capacity
         self.evaporation_rate: float = evaporation_rate
         self.delay: int = delay
-        self.default_outflow = default_outflow
+        self.default_outflow: Optional[float] = default_outflow
         self.timestep: int = 0
 
     def determine_source_outflow(self) -> float:
@@ -66,15 +66,18 @@ class Inflow(Flow):
         all_inflow: list[float],
         evaporation_rate: float = 0.0,
         delay: int = 0,
+        default_outflow: Optional[float] = None,
     ) -> None:
-        super().__init__(name, None, destination, max_capacity, evaporation_rate, delay)
+        super().__init__(name, None, destination, max_capacity, evaporation_rate, delay, default_outflow)
         self.all_inflow: list[float] = all_inflow
 
     def determine_source_outflow(self) -> float:
-        if self.timestep < self.delay:
-            return self.all_inflow[0]
+        if self.timestep - self.delay < 0 and self.default_outflow:
+            return self.default_outflow
         else:
-            return self.all_inflow[(self.timestep - self.delay) % len(self.all_inflow)]
+            timestep_after_delay_clipped = max(0, self.timestep - self.delay) % len(self.all_inflow)
+
+            return self.all_inflow[timestep_after_delay_clipped]
 
     def is_truncated(self) -> bool:
         return self.timestep >= len(self.all_inflow)

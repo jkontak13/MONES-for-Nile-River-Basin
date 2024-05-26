@@ -30,7 +30,7 @@ class IrrigationSystem(Facility):
     def __init__(self, name: str, all_demand: list[float], objective_function, objective_name: str) -> None:
         super().__init__(name, objective_function, objective_name)
         self.all_demand: list[float] = all_demand
-        self.total_deficit = 0
+        self.total_deficit: float = 0
         self.all_deficit: list[float] = []
 
     def get_current_demand(self) -> float:
@@ -95,7 +95,7 @@ class IrrigationSystem(Facility):
             "list_deficits": self.all_deficit,
         }
 
-    def reset(self):
+    def reset(self) -> None:
         super().reset()
         self.total_deficit = 0
         self.all_deficit = []

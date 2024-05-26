@@ -52,15 +52,15 @@ class PowerPlant(Facility):
         water_usage: float = 0.0,
     ) -> None:
         super().__init__(name, objective_function, objective_name)
-        self.efficiency = efficiency
-        self.max_turbine_flow = max_turbine_flow
-        self.head_start_level = head_start_level
-        self.max_capacity = max_capacity
-        self.dam = dam
-        self.water_usage = water_usage
-        self.production_vector = np.empty(0, dtype=np.float64)
+        self.efficiency: float = efficiency
+        self.max_turbine_flow: float = max_turbine_flow
+        self.head_start_level: float = head_start_level
+        self.max_capacity: float = max_capacity
+        self.dam: Dam = dam
+        self.water_usage: float = water_usage
+        self.production_vector: np.ndarray = np.empty(0, dtype=np.float64)
 
-        self.nu_of_days_per_month = [
+        self.nu_of_days_per_month: list[int] = [
             31,  # January
             28,  # February (non-leap year)
             31,  # March
@@ -75,11 +75,11 @@ class PowerPlant(Facility):
             31,  # December
         ]
 
-    def get_inflow(self, timestep: int):
-        return 0
+    def get_inflow(self, timestep: int) -> float:
+        return 0.0
 
     def get_outflow(self, timestep: int) -> float:
-        return 0
+        return 0.0
 
     # Constants are configured as parameters with default values
     def determine_production(self) -> float:
@@ -162,7 +162,7 @@ class PowerPlant(Facility):
             "total production (MWh)": sum(self.production_vector),
         }
 
-    def determine_month(self):
+    def determine_month(self) -> int:
         return self.timestep % 12
 
     def reset(self) -> None:
