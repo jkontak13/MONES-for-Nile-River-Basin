@@ -157,6 +157,8 @@ def create_nile_river_env() -> WaterManagementSystem:
         [Tamaniat_irr_system, Atbara_catchment],
         Hassanab_irr_system,
         float("inf"),
+        delay=1,
+        default_outflow=934.2,
     )
     HAD_flow = Flow("had_flow", [Hassanab_irr_system], HAD_dam, float("inf"))
     Egypt_flow = Flow("egypt_flow", [HAD_dam], Egypt_irr_system, float("inf"))

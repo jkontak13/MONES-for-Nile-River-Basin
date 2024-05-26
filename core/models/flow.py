@@ -1,4 +1,4 @@
-from typing import Optional, List, Union, Tuple
+from typing import Union, Optional
 from core.models.facility import Facility, ControlledFacility
 from gymnasium.core import ObsType
 
@@ -7,22 +7,29 @@ class Flow:
     def __init__(
         self,
         name: str,
-        sources: List[Union[Facility, ControlledFacility]],
+        sources: list[Union[Facility, ControlledFacility]],
         destination: Optional[Union[Facility, ControlledFacility]],
         max_capacity: float,
         evaporation_rate: float = 0.0,
         delay: int = 0,
+        default_outflow: Optional[float] = None,
     ) -> None:
         self.name: str = name
-        self.sources: List[Union[Facility, ControlledFacility]] = sources
+        self.sources: list[Union[Facility, ControlledFacility]] = sources
         self.destination: Union[Facility, ControlledFacility] = destination
         self.max_capacity: float = max_capacity
         self.evaporation_rate: float = evaporation_rate
         self.delay: int = delay
+        self.default_outflow = default_outflow
         self.timestep: int = 0
 
     def determine_source_outflow(self) -> float:
-        return sum(source.get_outflow_at_timestep(self.timestep - self.delay) for source in self.sources)
+        if self.timestep - self.delay < 0 and self.default_outflow:
+            return self.default_outflow
+        else:
+            timestep_after_delay_clipped = max(0, self.timestep - self.delay)
+
+            return sum(source.get_outflow(timestep_after_delay_clipped) for source in self.sources)
 
     def set_destination_inflow(self) -> None:
         destination_inflow = self.determine_source_outflow() * (1.0 - self.evaporation_rate)
@@ -34,7 +41,7 @@ class Flow:
     def determine_info(self) -> dict:
         return {"name": self.name, "flow": self.determine_source_outflow()}
 
-    def step(self) -> Tuple[Optional[ObsType], float, bool, bool, dict]:
+    def step(self) -> tuple[Optional[ObsType], float, bool, bool, dict]:
         self.set_destination_inflow()
 
         terminated = self.determine_source_outflow() > self.max_capacity
@@ -56,12 +63,12 @@ class Inflow(Flow):
         name: str,
         destination: Union[Facility, ControlledFacility],
         max_capacity: float,
-        all_inflow: List[float],
+        all_inflow: list[float],
         evaporation_rate: float = 0.0,
         delay: int = 0,
     ) -> None:
         super().__init__(name, None, destination, max_capacity, evaporation_rate, delay)
-        self.all_inflow: List[float] = all_inflow
+        self.all_inflow: list[float] = all_inflow
 
     def determine_source_outflow(self) -> float:
         if self.timestep < self.delay:
@@ -77,7 +84,7 @@ class Outflow(Flow):
     def __init__(
         self,
         name: str,
-        sources: List[Union[Facility, ControlledFacility]],
+        sources: list[Union[Facility, ControlledFacility]],
         max_capacity: float,
     ) -> None:
         super().__init__(name, sources, None, max_capacity)

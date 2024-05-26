@@ -1,12 +1,8 @@
-from typing import Tuple, Optional
 from pathlib import Path
 from core.models.facility import ControlledFacility
 from gymnasium.spaces import Box, Space
 import numpy as np
 from numpy.core.multiarray import interp as compiled_interp
-from array import array
-from bisect import bisect_right
-import decimal
 
 dam_data_directory = Path(__file__).parents[1] / "data" / "dams"
 
@@ -63,9 +59,8 @@ class Dam(ControlledFacility):
         objective_name: str = "",
         max_capacity: float = float("Inf"),
         stored_water: float = 0,
-        default_inflow: Optional[float] = None,
     ) -> None:
-        super().__init__(name, observation_space, action_space, max_capacity, default_inflow=default_inflow)
+        super().__init__(name, observation_space, action_space, max_capacity)
         self.stored_water: float = stored_water
 
         self.evap_rates = np.loadtxt(dam_data_directory / f"evap_{name}.txt")
@@ -75,7 +70,6 @@ class Dam(ControlledFacility):
 
         self.storage_vector = []
         self.level_vector = []
-        self.inflow_vector = []
         self.release_vector = []
 
         # Initialise storage vector
@@ -117,13 +111,11 @@ class Dam(ControlledFacility):
         # Calculate integration step
         integ_step = total_seconds / (nu_days * 48)
 
-        self.inflow_vector = np.append(self.inflow_vector, self.inflow)
-
         # Calculate outflow using integration function
         outflow = self.integration(
             total_seconds,
             action,
-            self.inflow,
+            self.get_inflow(self.timestep),
             integ_step,
         )
         return outflow
@@ -238,5 +230,4 @@ class Dam(ControlledFacility):
         self.storage_vector = [stored_water]
         self.stored_water = stored_water
         self.level_vector = []
-        self.inflow_vector = []
         self.release_vector = []

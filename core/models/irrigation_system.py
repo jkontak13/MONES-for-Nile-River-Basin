@@ -1,5 +1,4 @@
 from core.models.facility import Facility
-from typing import List, Optional
 
 
 class IrrigationSystem(Facility):
@@ -28,11 +27,11 @@ class IrrigationSystem(Facility):
         Returns info about the irrigation sustem
     """
 
-    def __init__(self, name: str, all_demand: List[float], objective_function, objective_name: str, default_inflow: Optional[float] = None) -> None:
-        super().__init__(name, objective_function, objective_name, default_inflow=default_inflow)
-        self.all_demand: List[float] = all_demand
+    def __init__(self, name: str, all_demand: list[float], objective_function, objective_name: str) -> None:
+        super().__init__(name, objective_function, objective_name)
+        self.all_demand: list[float] = all_demand
         self.total_deficit = 0
-        self.all_deficit: List[float] = []
+        self.all_deficit: list[float] = []
 
     def get_current_demand(self) -> float:
         return self.all_demand[self.timestep % len(self.all_demand)]
@@ -62,7 +61,7 @@ class IrrigationSystem(Facility):
         float
             Reward for the objective function.
         """
-        return self.objective_function(self.get_current_demand(), self.inflow)
+        return self.objective_function(self.get_current_demand(), self.get_inflow(self.timestep))
 
     def determine_consumption(self) -> float:
         """
@@ -73,7 +72,7 @@ class IrrigationSystem(Facility):
         float
             Water consumption
         """
-        return min(self.get_current_demand(), self.inflow)
+        return min(self.get_current_demand(), self.get_inflow(self.timestep))
 
     def is_truncated(self) -> bool:
         return self.timestep >= len(self.all_demand)
@@ -89,8 +88,8 @@ class IrrigationSystem(Facility):
         """
         return {
             "name": self.name,
-            "inflow": self.inflow,
-            "outflow": self.outflow,
+            "inflow": self.get_inflow(self.timestep),
+            "outflow": self.get_outflow(self.timestep),
             "demand": self.get_current_demand(),
             "total_deficit": self.total_deficit,
             "list_deficits": self.all_deficit,

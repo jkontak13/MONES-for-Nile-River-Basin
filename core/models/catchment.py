@@ -1,17 +1,19 @@
 from core.models.facility import Facility
-from typing import List, Optional
 
 
 class Catchment(Facility):
-    def __init__(self, name: str, all_water_accumulated: List[float], default_inflow: Optional[float] = None) -> None:
-        super().__init__(name, default_inflow=default_inflow)
-        self.all_water_accumulated: List[float] = all_water_accumulated
+    def __init__(self, name: str, all_water_accumulated: list[float]) -> None:
+        super().__init__(name)
+        self.all_water_accumulated: list[float] = all_water_accumulated
 
     def determine_reward(self) -> float:
         return 0
 
+    def get_inflow(self, timestep: int) -> float:
+        return self.all_water_accumulated[timestep % len(self.all_water_accumulated)]
+
     def determine_consumption(self) -> float:
-        return -self.all_water_accumulated[self.timestep % len(self.all_water_accumulated)]
+        return 0
 
     def is_truncated(self) -> bool:
         return self.timestep >= len(self.all_water_accumulated)

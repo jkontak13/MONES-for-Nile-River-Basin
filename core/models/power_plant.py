@@ -1,7 +1,6 @@
 from core.models.facility import Facility
 from core.models.dam import Dam
 from scipy.constants import g
-from typing import Optional
 import numpy as np
 
 
@@ -51,9 +50,8 @@ class PowerPlant(Facility):
         dam: Dam = None,
         # TODO: determine actual water usage for power plants, 0.0 for ease now
         water_usage: float = 0.0,
-        default_inflow: Optional[float] = None,
     ) -> None:
-        super().__init__(name, objective_function, objective_name, default_inflow=default_inflow)
+        super().__init__(name, objective_function, objective_name)
         self.efficiency = efficiency
         self.max_turbine_flow = max_turbine_flow
         self.head_start_level = head_start_level
@@ -76,6 +74,12 @@ class PowerPlant(Facility):
             30,  # November
             31,  # December
         ]
+
+    def get_inflow(self, timestep: int):
+        return 0
+
+    def get_outflow(self, timestep: int) -> float:
+        return 0
 
     # Constants are configured as parameters with default values
     def determine_production(self) -> float:
@@ -138,7 +142,7 @@ class PowerPlant(Facility):
         float
             How much water is consumed
         """
-        return self.inflow * self.water_usage
+        return self.get_inflow(self.timestep) * self.water_usage
 
     def determine_info(self) -> dict:
         """
@@ -151,8 +155,8 @@ class PowerPlant(Facility):
         """
         return {
             "name": self.name,
-            "inflow": self.inflow,
-            "outflow": self.outflow,
+            "inflow": self.get_inflow(self.timestep),
+            "outflow": self.get_outflow(self.timestep),
             "monthly_production": self.production_vector[-1],
             "water_usage": self.water_usage,
             "total production (MWh)": sum(self.production_vector),
