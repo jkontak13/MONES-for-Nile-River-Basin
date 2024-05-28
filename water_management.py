@@ -7,6 +7,7 @@ import torch
 from matplotlib import pyplot as plt
 from torch import nn
 
+from core.learners.metrics import non_dominated
 from core.learners.mones import MONES
 from datetime import datetime
 import uuid
@@ -49,11 +50,12 @@ def train_agent(logdir, iterations=5, n_population=10, n_runs=1, parallel=False)
         logdir=logdir,
         indicator="hypervolume",
         # TODO: Change depending on the time horizon
-        ref_point=np.array(ref_point_1_year) + epsilon,
+        ref_point=np.array(ref_point_2_years) + epsilon,
         parallel=parallel,
     )
     timer = time.time()
     agent.train(iterations)
+    agent.logger.put("train/time", time.time() - timer, 0, "scalar")
     print(f"Training took: {time.time() - timer} seconds")
 
     print("Logdir:", logdir)
@@ -106,12 +108,14 @@ def show_logs(logdir):
         print(data)
 
         group = f['train']
-        print("Hypervolume:", group['hypervolume'][()])
-        print("Indicator metric:", group['metric'][()])
-        print(group['returns']['ndarray'][()])
-        # print(group['returns']['step'][()])
 
-        plt.plot(group['hypervolume'][()][:, 0], group['hypervolume'][()][:, 1])
+        # print("Hypervolume:", group['hypervolume'][()])
+        # print("Indicator metric:", group['metric'][()])
+        print("ND returns:", non_dominated(group['returns']['ndarray'][-1]))
+        # print(group['returns']['step'][()])
+        print("Training took", group['time'][0][1], "seconds")
+
+        plt.plot(group['hypervolume'][()][:, 0], group['hypervolume'][()][:, 1], marker=".")
         plt.show()
 
 
@@ -119,7 +123,7 @@ if __name__ == "__main__":
     logdir = "runs/"
     logdir += datetime.now().strftime("%Y-%m-%d_%H-%M-%S_") + str(uuid.uuid4())[:4] + "/"
 
-    train_agent(logdir, iterations=5, n_population=5, n_runs=1, parallel=False)
+    train_agent(logdir, iterations=50, n_population=5, n_runs=1, parallel=True)
 
     # Trained agent path
     # temp = time.time()
@@ -127,5 +131,5 @@ if __name__ == "__main__":
     # run_agent(logdir)
     # print(time.time() - temp)
     # Read log file
-    # logdir = "runs/2024-05-23_17-33-42_248e/log.h5"
+    # logdir = "runs/2024-05-27_17-10-34_3b0f/log.h5"
     # show_logs(logdir)
