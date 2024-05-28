@@ -74,10 +74,8 @@ def indicator_non_dominated(points):
     return indicator
 
 
-def evaluate_individual(make_env, individual, n_runs, n_objectives, seed):
+def evaluate_individual(make_env, individual, n_runs, n_objectives):
     env = make_env()
-    np.random.seed(seed)
-    torch.manual_seed(seed)
 
     p_return = torch.zeros(n_runs, n_objectives)
     for r in range(n_runs):
@@ -90,12 +88,11 @@ def evaluate_population_parallel(make_env, population, n_runs, n_objectives):
     DOESN'T WORK. For some reason each env happens to have exactly the same final reward.
     """
     returns = torch.zeros(len(population), n_objectives)
-    seeds = np.random.randint(0, 2**31 - 1, size=len(population))
 
     with concurrent.futures.ProcessPoolExecutor() as executor:
         futures = []
         for i, individual in enumerate(population):
-            futures.append(executor.submit(evaluate_individual, make_env, individual, n_runs, n_objectives, seeds[i]))
+            futures.append(executor.submit(evaluate_individual, make_env, individual, n_runs, n_objectives))
 
         for i, future in enumerate(concurrent.futures.as_completed(futures)):
             returns[i] = future.result()
@@ -132,6 +129,10 @@ class MONES(object):
             self.n_objectives = 1
         else:
             raise ValueError("unknown indicator, choose between hypervolume and non_dominated")
+
+        self.logger.put("params/n_population", n_population, 0, "scalar")
+        self.logger.put("params/n_runs", n_runs, 0, "scalar")
+        self.logger.put("params/parallel", parallel, 0, "scalar")
 
     def start(self):
         # make distribution
@@ -193,6 +194,8 @@ class MONES(object):
         return {"returns": returns, "metric": np.mean(indicator_metric)}
 
     def train(self, iterations):
+        self.logger.put("params/iterations", iterations, 0, "scalar")
+
         self.start()
 
         for i in range(iterations):
