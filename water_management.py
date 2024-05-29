@@ -31,7 +31,7 @@ class Actor(nn.Module):
         a = self.fc1(state.T)
         a = torch.tanh(a)
         a = self.fc2(a)
-        return 100*a
+        return 100 * a
 
 
 def train_agent(logdir, iterations=5, n_population=10, n_runs=1, parallel=False):
@@ -50,7 +50,7 @@ def train_agent(logdir, iterations=5, n_population=10, n_runs=1, parallel=False)
         logdir=logdir,
         indicator="hypervolume",
         # TODO: Change depending on the time horizon
-        ref_point=np.array(ref_point_2_years) + epsilon,
+        ref_point=np.array(ref_point_20_years) + epsilon,
         parallel=parallel,
     )
     timer = time.time()
@@ -106,16 +106,23 @@ def show_logs(logdir):
         # this gets the object names in the group and returns as a list
         data = list(f[a_group_key])
         print(data)
+        print(list(f[list(f.keys())[1]]))
 
-        group = f['train']
+        params = f["params"]
+
+        print("Iterations: \t", params["iterations"][0][1])
+        print("N_populations: \t", params["n_population"][0][1])
+        print("Parallel: \t", params["parallel"][0][1])
+
+        group = f["train"]
 
         # print("Hypervolume:", group['hypervolume'][()])
         # print("Indicator metric:", group['metric'][()])
-        print("ND returns:", non_dominated(group['returns']['ndarray'][-1]))
+        print("ND returns:", non_dominated(group["returns"]["ndarray"][-1]))
         # print(group['returns']['step'][()])
-        print("Training took", group['time'][0][1], "seconds")
+        print("Training took", group["time"][0][1], "seconds")
 
-        plt.plot(group['hypervolume'][()][:, 0], group['hypervolume'][()][:, 1], marker=".")
+        plt.plot(group["hypervolume"][()][:, 0], group["hypervolume"][()][:, 1], marker=".")
         plt.show()
 
 

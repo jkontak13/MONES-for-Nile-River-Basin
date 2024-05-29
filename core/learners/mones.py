@@ -28,8 +28,6 @@ def run_episode(env, model):
 
     while not done:
         with torch.no_grad():
-            # Delete [:, None], because it's not necessary to reshape the input
-            # when the observations are 1D array
             action = model(torch.from_numpy(o).float()[:, None])
             action = action.detach().numpy().flatten()
         n_o, r, terminated, truncated, _ = env.step(action)
@@ -84,9 +82,6 @@ def evaluate_individual(make_env, individual, n_runs, n_objectives):
 
 
 def evaluate_population_parallel(make_env, population, n_runs, n_objectives):
-    """
-    DOESN'T WORK. For some reason each env happens to have exactly the same final reward.
-    """
     returns = torch.zeros(len(population), n_objectives)
 
     with concurrent.futures.ProcessPoolExecutor() as executor:
@@ -103,7 +98,15 @@ def evaluate_population_parallel(make_env, population, n_runs, n_objectives):
 class MONES(object):
 
     def __init__(
-        self, make_env, policy, n_population=1, n_runs=1, indicator="non_dominated", ref_point=None, logdir="runs", parallel=False
+        self,
+        make_env,
+        policy,
+        n_population=1,
+        n_runs=1,
+        indicator="non_dominated",
+        ref_point=None,
+        logdir="runs",
+        parallel=False,
     ):
         self.make_env = make_env
         self.policy = policy
@@ -160,10 +163,8 @@ class MONES(object):
         indicator_metric = self.indicator(returns)
         metric = torch.tensor(indicator_metric, dtype=torch.float64)[:, None]
 
-        # use fitness ranking TODO doesn't help
-        # returns = centered_ranking(returns)
-        # standardize the rewards to have a gaussian distribution
         epsilon = 1e-8  # Small value for numerical stability
+        # standardize the rewards to have a gaussian distribution
         metric = (metric - torch.mean(metric, dim=0)) / (torch.std(metric, dim=0) + epsilon)
 
         # compute loss
@@ -233,9 +234,6 @@ class MONES(object):
             print(f"Population \t {i+1}/{len(population)}")
             p_return = torch.zeros(self.n_runs, self.n_objectives)
             for r in range(self.n_runs):
-                # print(f'Run \t\t {r+1}/{self.n_runs}')
-                temp_time = time.time()
                 p_return[r] = run_episode(env, population[i])
-                # print(f"Run took \t {time.time() - temp_time} seconds")
             returns[i] = torch.mean(p_return, dim=0)
         return returns

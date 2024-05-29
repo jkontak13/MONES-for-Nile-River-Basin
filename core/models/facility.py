@@ -134,4 +134,3 @@ class ControlledFacility(ABC):
         self.timestep: int = 0
         self.inflow: float = 0
         self.outflow: float = 0
-
