@@ -108,32 +108,32 @@ def create_nile_river_env():
     DSSennar_irr_system = IrrigationSystem(
         "DSSennar_irr",
         np.loadtxt(data_directory / "irrigation" / "irr_demand_DSSennar.txt"),
-        Objective.water_deficit_minimised,
-        "sudan_deficit_minimised",
+        objective_function=Objective.water_deficit_minimised_weighted,
+        objective_name="sudan_deficit_minimised",
     )
     Gezira_irr_system = IrrigationSystem(
         "Gezira_irr",
         np.loadtxt(data_directory / "irrigation" / "irr_demand_Gezira.txt"),
-        Objective.water_deficit_minimised,
-        "sudan_deficit_minimised",
+        objective_function=Objective.water_deficit_minimised_weighted,
+        objective_name="sudan_deficit_minimised",
     )
     Hassanab_irr_system = IrrigationSystem(
         "Hassanab_irr",
         np.loadtxt(data_directory / "irrigation" / "irr_demand_Hassanab.txt"),
-        Objective.water_deficit_minimised,
-        "sudan_deficit_minimised",
+        objective_function=Objective.water_deficit_minimised_weighted,
+        objective_name="sudan_deficit_minimised",
     )
     Tamaniat_irr_system = IrrigationSystem(
         "Tamaniat_irr",
         np.loadtxt(data_directory / "irrigation" / "irr_demand_Tamaniat.txt"),
-        Objective.water_deficit_minimised,
-        "sudan_deficit_minimised",
+        objective_function=Objective.water_deficit_minimised_weighted,
+        objective_name="sudan_deficit_minimised",
     )
     USSennar_irr_system = IrrigationSystem(
         "USSennar_irr",
         np.loadtxt(data_directory / "irrigation" / "irr_demand_USSennar.txt"),
-        Objective.water_deficit_minimised,
-        "sudan_deficit_minimised",
+        objective_function=Objective.water_deficit_minimised_weighted,
+        objective_name="sudan_deficit_minimised",
     )
     Roseires_dam = Dam(
         "Roseires",
@@ -153,8 +153,8 @@ def create_nile_river_env():
     Egypt_irr_system = IrrigationSystem(
         "Egypt_irr",
         np.loadtxt(data_directory / "irrigation" / "irr_demand_Egypt.txt"),
-        Objective.water_deficit_minimised,
-        "egypt_deficit_minimised",
+        objective_function=Objective.water_deficit_minimised_weighted,
+        objective_name="egypt_deficit_minimised",
     )
     HAD_dam = Dam(
         "HAD",
