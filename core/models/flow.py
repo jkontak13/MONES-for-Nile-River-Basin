@@ -1,3 +1,5 @@
+from datetime import datetime
+from dateutil.relativedelta import relativedelta
 from typing import Union, Optional
 from core.models.facility import Facility, ControlledFacility
 from gymnasium.core import ObsType
@@ -17,10 +19,15 @@ class Flow:
         self.name: str = name
         self.sources: list[Union[Facility, ControlledFacility]] = sources
         self.destination: Union[Facility, ControlledFacility] = destination
+
         self.max_capacity: float = max_capacity
         self.evaporation_rate: float = evaporation_rate
+
         self.delay: int = delay
         self.default_outflow: Optional[float] = default_outflow
+
+        self.current_date: Optional[datetime] = None
+        self.timestep_size: Optional[relativedelta] = None
         self.timestep: int = 0
 
     def determine_source_outflow(self) -> float:

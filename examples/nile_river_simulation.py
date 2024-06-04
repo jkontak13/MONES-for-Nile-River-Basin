@@ -1,6 +1,7 @@
 import numpy as np
 from pathlib import Path
 from gymnasium.spaces import Box
+from gymnasium.wrappers.time_limit import TimeLimit
 from core.envs.water_management_system import WaterManagementSystem
 from core.models.dam import Dam
 from core.models.flow import Flow, Inflow
@@ -8,6 +9,8 @@ from core.models.objective import Objective
 from core.models.power_plant import PowerPlant
 from core.models.irrigation_system import IrrigationSystem
 from core.models.catchment import Catchment
+from datetime import datetime
+from dateutil.relativedelta import relativedelta
 
 
 def create_nile_river_env() -> WaterManagementSystem:
@@ -16,7 +19,8 @@ def create_nile_river_env() -> WaterManagementSystem:
         "GERD",
         Box(low=0, high=80000000000),
         Box(0, 10000),
-        Objective.no_objective,
+        integration_timestep_size=relativedelta(minutes=30),
+        objective_function=Objective.no_objective,
         stored_water=15000000000.0,
     )
     GERD_power_plant = PowerPlant(
@@ -66,14 +70,16 @@ def create_nile_river_env() -> WaterManagementSystem:
         "Roseires",
         Box(low=0, high=80000000000),
         Box(0, 10000),
-        Objective.no_objective,
+        integration_timestep_size=relativedelta(minutes=30),
+        objective_function=Objective.no_objective,
         stored_water=4571250000.0,
     )
     Sennar_dam = Dam(
         "Sennar",
         Box(low=0, high=80000000000),
         Box(0, 10000),
-        Objective.no_objective,
+        integration_timestep_size=relativedelta(minutes=30),
+        objective_function=Objective.no_objective,
         stored_water=434925000.0,
     )
     # Egypt
@@ -87,8 +93,9 @@ def create_nile_river_env() -> WaterManagementSystem:
         "HAD",
         Box(low=0, high=80000000000),
         Box(0, 4000),
-        Objective.minimum_water_level,
-        "HAD_minimum_water_level",
+        integration_timestep_size=relativedelta(minutes=30),
+        objective_function=Objective.minimum_water_level,
+        objective_name="HAD_minimum_water_level",
         stored_water=137025000000.0,
     )
     # Create 'edges' between Facilities.
@@ -201,8 +208,11 @@ def create_nile_river_env() -> WaterManagementSystem:
             "egypt_deficit_minimised": 0,
             "HAD_minimum_water_level": 0,
         },
+        start_date=datetime(2025, 1, 1),
+        timestep_size=relativedelta(months=1),
         seed=42,
-        step_limit=240,  # Use low horizon for local training
     )
+
+    water_management_system = TimeLimit(water_management_system, max_episode_steps=240)
 
     return water_management_system
