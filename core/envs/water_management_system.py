@@ -64,7 +64,7 @@ class WaterManagementSystem(gym.Env):
         )
 
     def _is_truncated(self) -> bool:
-        return self.timestep >= self.step_limit
+        return False
 
     def _determine_info(self) -> dict[str, Any]:
         # TODO: decide on what we wnat to output in the info.
@@ -82,7 +82,7 @@ class WaterManagementSystem(gym.Env):
             self.rewards[key] = 0
 
         for water_system in self.water_systems:
-            water_system.set_current_date(self.start_date)
+            water_system.current_date = self.start_date
             water_system.reset()
         return self.observation, self._determine_info()
 
@@ -96,7 +96,7 @@ class WaterManagementSystem(gym.Env):
         final_observation = {}
         final_terminated = False
         final_truncated = False
-        final_info = {}
+        final_info = {"date": self.current_date}
 
         actions_taken = 0
         for water_system in self.water_systems:
