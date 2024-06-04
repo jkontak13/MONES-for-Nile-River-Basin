@@ -38,6 +38,7 @@ class WaterManagementSystem(gym.Env):
         for water_system in self.water_systems:
             if isinstance(water_system, ControlledFacility):
                 result.append(water_system.determine_observation())
+        result.append(self.timestep % 12 + 1)
         return np.array(result)
 
     def _determine_observation_space(self) -> Dict:
@@ -79,7 +80,7 @@ class WaterManagementSystem(gym.Env):
         return self.observation, self._determine_info()
 
     def step(self, action: np.array) -> Tuple[np.array, np.array, bool, bool, dict]:
-        final_reward = {}
+        final_reward = self.rewards
 
         # Reset rewards
         for key in self.rewards.keys():
@@ -119,6 +120,7 @@ class WaterManagementSystem(gym.Env):
             if final_terminated or final_truncated:
                 break
 
+        final_observation["timestep"] = self.timestep % 12 + 1
         self.timestep += 1
 
         return (

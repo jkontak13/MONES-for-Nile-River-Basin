@@ -125,6 +125,7 @@ class Dam(ControlledFacility):
             self.inflow,
             integ_step,
         )
+        # print("Outflow of water:", outflow, "from action", action)
         return outflow
 
     def determine_info(self) -> dict:
@@ -237,5 +238,4 @@ class Dam(ControlledFacility):
         self.storage_vector = [stored_water]
         self.stored_water = stored_water
         self.level_vector = []
-        self.inflow_vector = []
         self.release_vector = []
