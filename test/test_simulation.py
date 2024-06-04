@@ -36,7 +36,7 @@ def test_simulation() -> None:
 
         _, _, _, _, final_info = water_management_system.step(action)
 
-        assert get_info_for_verification(final_info) == approx(info_to_verify, rel=0.1)
+        assert get_info_for_verification(final_info) == approx(info_to_verify, abs=0.1)
 
 
 def load_simulation_run_from_file(
