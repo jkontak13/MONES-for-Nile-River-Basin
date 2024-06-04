@@ -1,19 +1,24 @@
 from abc import ABC, abstractmethod
+from datetime import datetime
+from dateutil.relativedelta import relativedelta
 from gymnasium.spaces import Space
 from gymnasium.core import ObsType, ActType
-from typing import SupportsFloat
+from typing import SupportsFloat, Optional
 from core.models.objective import Objective
 
 
 class Facility(ABC):
     def __init__(self, name: str, objective_function=Objective.no_objective, objective_name: str = "") -> None:
         self.name: str = name
-        self.timestep: int = 0
         self.all_inflow: list[float] = []
         self.all_outflow: list[float] = []
 
         self.objective_function = objective_function
         self.objective_name = objective_name
+
+        self.current_date: Optional[datetime] = None
+        self.timestep_size: Optional[relativedelta] = None
+        self.timestep: int = 0
 
     @abstractmethod
     def determine_reward(self) -> float:
@@ -77,7 +82,6 @@ class ControlledFacility(ABC):
         max_capacity: float = float("Inf"),
     ) -> None:
         self.name: str = name
-        self.timestep: int = 0
         self.all_inflow: list[float] = []
         self.all_outflow: list[float] = []
 
@@ -88,6 +92,10 @@ class ControlledFacility(ABC):
         self.objective_name = objective_name
 
         self.max_capacity: float = max_capacity
+
+        self.current_date: Optional[datetime] = None
+        self.timestep_size: Optional[relativedelta] = None
+        self.timestep: int = 0
 
     @abstractmethod
     def determine_reward(self) -> float:
