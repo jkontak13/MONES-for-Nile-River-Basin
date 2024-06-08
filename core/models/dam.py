@@ -1,12 +1,8 @@
-from typing import Tuple
 from pathlib import Path
 from core.models.facility import ControlledFacility
 from gymnasium.spaces import Box, Space
 import numpy as np
 from numpy.core.multiarray import interp as compiled_interp
-from array import array
-from bisect import bisect_right
-import decimal
 
 dam_data_directory = Path(__file__).parents[1] / "data" / "dams"
 
@@ -74,7 +70,6 @@ class Dam(ControlledFacility):
 
         self.storage_vector = []
         self.level_vector = []
-        self.inflow_vector = []
         self.release_vector = []
 
         # Initialise storage vector
@@ -116,13 +111,11 @@ class Dam(ControlledFacility):
         # Calculate integration step
         integ_step = total_seconds / (nu_days * 48)
 
-        self.inflow_vector = np.append(self.inflow_vector, self.inflow)
-
         # Calculate outflow using integration function
         outflow = self.integration(
             total_seconds,
             action,
-            self.inflow,
+            self.get_inflow(self.timestep),
             integ_step,
         )
         return outflow
@@ -143,7 +136,7 @@ class Dam(ControlledFacility):
     def is_terminated(self) -> bool:
         return self.stored_water > self.max_capacity or self.stored_water < 0
 
-    def determine_month(self):
+    def determine_month(self) -> int:
         return self.timestep % 12
 
     def storage_to_level(self, s: float) -> float:
@@ -152,13 +145,13 @@ class Dam(ControlledFacility):
     def storage_to_surface(self, s: float) -> float:
         return self.modified_interp(s, self.storage_to_surface_rel[0], self.storage_to_surface_rel[1])
 
-    def level_to_minmax(self, h):
+    def level_to_minmax(self, h) -> tuple[np.ndarray, np.ndarray]:
         return (
             np.interp(h, self.rating_curve[0], self.rating_curve[1]),
             np.interp(h, self.rating_curve[0], self.rating_curve[2]),
         )
 
-    def storage_to_minmax(self, s):
+    def storage_to_minmax(self, s) -> tuple[np.ndarray, np.ndarray]:
         return (
             np.interp(s, self.storage_to_minmax_rel[0], self.storage_to_minmax_rel[1]),
             np.interp(s, self.storage_to_minmax_rel[0], self.storage_to_minmax_rel[2]),
@@ -237,5 +230,4 @@ class Dam(ControlledFacility):
         self.storage_vector = [stored_water]
         self.stored_water = stored_water
         self.level_vector = []
-        self.inflow_vector = []
         self.release_vector = []

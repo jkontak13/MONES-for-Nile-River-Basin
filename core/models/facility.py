@@ -1,8 +1,7 @@
 from abc import ABC, abstractmethod
-import numpy as np
 from gymnasium.spaces import Space
 from gymnasium.core import ObsType, ActType
-from typing import SupportsFloat, Tuple
+from typing import SupportsFloat
 from core.models.objective import Objective
 
 
@@ -10,9 +9,8 @@ class Facility(ABC):
     def __init__(self, name: str, objective_function=Objective.no_objective, objective_name: str = "") -> None:
         self.name: str = name
         self.timestep: int = 0
-        self.inflow: float = 0
-        self.outflow: float = 0
-        self.inflow_vector = np.empty(0, dtype=np.float64)
+        self.all_inflow: list[float] = []
+        self.all_outflow: list[float] = []
 
         self.objective_function = objective_function
         self.objective_name = objective_name
@@ -35,19 +33,24 @@ class Facility(ABC):
     def is_truncated(self) -> bool:
         return False
 
-    def step(self) -> Tuple[ObsType, float, bool, bool, dict]:
-        self.inflow_vector = np.append(self.inflow_vector, self.inflow)
+    def get_inflow(self, timestep: int) -> float:
+        return self.all_inflow[timestep]
 
-        if self.name == "Hassanab_irr":
-            # If inflow_vector has only one element, set inflow to the initial value
-            if len(self.inflow_vector) == 1:
-                self.inflow = 934.2
-            else:
-                # Get the previous inflow
-                self.inflow = self.inflow_vector[-2]
+    def set_inflow(self, timestep: int, inflow: float) -> None:
+        if len(self.all_inflow) != timestep:
+            raise IndexError
 
-        self.outflow = self.inflow - self.determine_consumption()
-        # TODO: Determine if we need to satisfy any terminating conditions for facility.
+        self.all_inflow.append(inflow)
+
+    def determine_outflow(self) -> float:
+        return self.get_inflow(self.timestep) - self.determine_consumption()
+
+    def get_outflow(self, timestep: int) -> float:
+        return self.all_outflow[timestep]
+
+    def step(self) -> tuple[ObsType, float, bool, bool, dict]:
+        self.all_outflow.append(self.determine_outflow())
+        # TODO: Determine if we need to satisy any terminating codnitions for facility.
         reward = self.determine_reward()
         terminated = self.is_terminated()
         truncated = self.is_truncated()
@@ -59,8 +62,8 @@ class Facility(ABC):
 
     def reset(self) -> None:
         self.timestep: int = 0
-        self.inflow: float = 0
-        self.outflow: float = 0
+        self.all_inflow: list[float] = []
+        self.all_outflow: list[float] = []
 
 
 class ControlledFacility(ABC):
@@ -75,8 +78,8 @@ class ControlledFacility(ABC):
     ) -> None:
         self.name: str = name
         self.timestep: int = 0
-        self.inflow: float = 0
-        self.outflow: float = 0
+        self.all_inflow: list[float] = []
+        self.all_outflow: list[float] = []
 
         self.observation_space: Space = observation_space
         self.action_space: Space = action_space
@@ -91,7 +94,7 @@ class ControlledFacility(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def determine_outflow(self, action: ActType) -> float:
+    def determine_outflow(action: ActType) -> float:
         raise NotImplementedError()
 
     @abstractmethod
@@ -109,8 +112,20 @@ class ControlledFacility(ABC):
     def is_truncated(self) -> bool:
         return False
 
-    def step(self, action: ActType) -> Tuple[ObsType, SupportsFloat, bool, bool, dict]:
-        self.outflow = self.determine_outflow(action)
+    def get_inflow(self, timestep: int) -> float:
+        return self.all_inflow[timestep]
+
+    def set_inflow(self, timestep: int, inflow: float) -> None:
+        if len(self.all_inflow) != timestep:
+            raise IndexError
+
+        self.all_inflow.append(inflow)
+
+    def get_outflow(self, timestep: int) -> float:
+        return self.all_outflow[timestep]
+
+    def step(self, action: ActType) -> tuple[ObsType, SupportsFloat, bool, bool, dict]:
+        self.all_outflow.append(self.determine_outflow(action))
         # TODO: Change stored_water to multiple outflows.
 
         observation = self.determine_observation()
@@ -131,5 +146,5 @@ class ControlledFacility(ABC):
 
     def reset(self) -> None:
         self.timestep: int = 0
-        self.inflow: float = 0
-        self.outflow: float = 0
+        self.all_inflow: list[float] = []
+        self.all_outflow: list[float] = []
