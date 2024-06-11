@@ -7,6 +7,7 @@ import torch
 from matplotlib import pyplot as plt
 from torch import nn
 
+from comparison.converter import Converter
 from core.learners.metrics import non_dominated
 from core.learners.mones import MONES
 from datetime import datetime
@@ -29,7 +30,8 @@ class Actor(nn.Module):
 
         # actor
         a = self.fc1(state.T)
-        a = torch.tanh(a)
+        a = torch.relu(a)
+        # a = torch.tanh(a)
         a = self.fc2(a)
         return 100 * a
 
@@ -40,6 +42,9 @@ def train_agent(logdir, iterations=5, n_population=10, n_runs=1, parallel=False)
     ref_point_1_year = [0, -21107.50, -4710.52, 0]
     ref_point_2_years = [0, -42215.00, -9421.04, 0]
     ref_point_20_years = [0, -94210.39, -422150.04, 0]
+
+    ref_point_20_years_weighted_deficit = [0, -2862500, -12847222.22, 0]
+
     number_of_observations = 5
     number_of_actions = 4
     agent = MONES(
@@ -50,7 +55,7 @@ def train_agent(logdir, iterations=5, n_population=10, n_runs=1, parallel=False)
         logdir=logdir,
         indicator="hypervolume",
         # TODO: Change depending on the time horizon
-        ref_point=np.array(ref_point_20_years) + epsilon,
+        ref_point=np.array(ref_point_20_years_weighted_deficit) + epsilon,
         parallel=parallel,
     )
     timer = time.time()
@@ -64,18 +69,18 @@ def train_agent(logdir, iterations=5, n_population=10, n_runs=1, parallel=False)
 
 def run_agent(logdir):
     # Load agent
-    checkpoint = torch.load(logdir)
-    print(checkpoint)
-    agent = checkpoint["policy"]
+    # checkpoint = torch.load(logdir)
+    # print(checkpoint)
+    # agent = checkpoint["policy"]
 
     timesteps = 240
     env = create_nile_river_env()
     obs, _ = env.reset(seed=2137)
     # print(obs)
     for _ in range(timesteps):
-        action = agent.forward(torch.from_numpy(obs).float())
-        action = action.detach().numpy().flatten()
-        # action = [5, 5, 5, 5]
+        # action = agent.forward(torch.from_numpy(obs).float())
+        # action = action.detach().numpy().flatten()
+        action = [5, 5, 5, 5]
         # print("Action:")
         # pprint(action)
         (
@@ -116,12 +121,17 @@ def show_logs(logdir):
 
         group = f["train"]
 
-        # print("Hypervolume:", group['hypervolume'][()])
+        print("Hypervolume:", group['hypervolume'][()])
         # print("Indicator metric:", group['metric'][()])
-        print("ND returns:", non_dominated(group["returns"]["ndarray"][-1]))
+        nd_points = non_dominated(group["returns"]["ndarray"][-1])
+        print("ND returns:", nd_points)
+        print(Converter.convert_array(nd_points))
         # print(group['returns']['step'][()])
         print("Training took", group["time"][0][1], "seconds")
 
+        plt.title("Hypervolume for the MONES training")
+        plt.xlabel("Iteration number")
+        plt.ylabel("Hypervolume")
         plt.plot(group["hypervolume"][()][:, 0], group["hypervolume"][()][:, 1], marker=".")
         plt.show()
 
@@ -130,13 +140,13 @@ if __name__ == "__main__":
     logdir = "runs/"
     logdir += datetime.now().strftime("%Y-%m-%d_%H-%M-%S_") + str(uuid.uuid4())[:4] + "/"
 
-    train_agent(logdir, iterations=50, n_population=5, n_runs=1, parallel=True)
+    # train_agent(logdir, iterations=3, n_population=4, n_runs=1, parallel=True)
 
     # Trained agent path
     # temp = time.time()
-    # logdir = "runs/2024-05-21_19-09-55_ac09/checkpoint.pt"
+    # logdir = "runs/2024-06-02_11-49-46_dfa5/checkpoint.pt"
     # run_agent(logdir)
     # print(time.time() - temp)
     # Read log file
-    # logdir = "runs/2024-05-27_17-10-34_3b0f/log.h5"
-    # show_logs(logdir)
+    logdir = "runs/2024-06-05_14-33-12_8459/log.h5"
+    show_logs(logdir)
