@@ -21,7 +21,7 @@ def set_parameters(model, z):
         s += n_p
 
 
-def run_episode(env, model):
+def run_episode(env, model, debug=False):
     e_r = 0
     done = False
     o, _ = env.reset()
@@ -30,11 +30,22 @@ def run_episode(env, model):
         with torch.no_grad():
             action = model(torch.from_numpy(o).float()[:, None])
             action = action.detach().numpy().flatten()
-        n_o, r, terminated, truncated, _ = env.step(action)
+        n_o, r, terminated, truncated, info = env.step(action)
+        # print(info)
+        if debug:
+            # print("Action:", action)
+            # print("Reward:", r)
+            # print("Observation:", n_o)
+            debug = True
         e_r += r
         o = n_o
         if terminated or truncated:
             done = True
+            if debug:
+                print("GERD levels:", last_info["GERD"]["level_vector"])
+                print("Final reward:", e_r)
+        if debug:
+            last_info = info
     return torch.from_numpy(e_r).float()
 
 
@@ -62,9 +73,7 @@ def indicator_hypervolume(points, ref, nd_penalty=0.0):
         else:
             hv_p[i] = hv
 
-    print("HV_P:", hv_p)
     indicator = hv - hv_p - nd_penalty * np.logical_not(is_nd)
-    print("Indicator:", indicator)
     return indicator
 
 
@@ -241,12 +250,12 @@ class MONES(object):
             z.append(z_i)
         return population, torch.stack(z)
 
-    def evaluate_population(self, env, population):
+    def evaluate_population(self, env, population, debug=False):
         returns = torch.zeros(len(population), self.n_objectives)
         for i in range(len(population)):
             print(f"Population \t {i+1}/{len(population)}")
             p_return = torch.zeros(self.n_runs, self.n_objectives)
             for r in range(self.n_runs):
-                p_return[r] = run_episode(env, population[i])
+                p_return[r] = run_episode(env, population[i], debug)
             returns[i] = torch.mean(p_return, dim=0)
         return returns
