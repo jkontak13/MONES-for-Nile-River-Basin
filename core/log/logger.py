@@ -37,7 +37,7 @@ class Logger(object):
         atexit.register(self.flush)
         self._write_thread.start()
 
-    def wait_and_write(self, wait=30):
+    def wait_and_write(self, wait=90):
         while True:
             time.sleep(wait)
             with self._lock:
@@ -76,7 +76,7 @@ class Logger(object):
         if type_ == "image":
             value = resize_image(value)
         with self._lock:
-            if not tag in self.to_log:
+            if tag not in self.to_log:
                 self.types[tag] = type_
                 self.to_log[tag] = []
             self.to_log[tag].append((step, value))
