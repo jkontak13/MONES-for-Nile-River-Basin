@@ -5,7 +5,7 @@ import numpy as np
 from dateutil.relativedelta import relativedelta
 from numpy.core.multiarray import interp as compiled_interp
 
-dam_data_directory = Path(__file__).parents[1] / "data" / "dams"
+dam_data_directory = Path(__file__).parents[2] / "examples" / "data" / "nile_river" / "dams"
 
 
 class Dam(ControlledFacility):
@@ -53,12 +53,21 @@ class Dam(ControlledFacility):
         action_space: Box,
         objective_function,
         integration_timestep_size: relativedelta,
+        evap_rates: list[float],
+        storage_to_minmax_rel: list[list[float]],
+        storage_to_level_rel: list[list[float]],
+        storage_to_surface_rel: list[list[float]],
         objective_name: str = "",
         max_capacity: float = float("Inf"),
         stored_water: float = 0,
     ) -> None:
         super().__init__(name, observation_space, action_space, max_capacity)
         self.stored_water: float = stored_water
+
+        self.evap_rates = evap_rates
+        self.storage_to_minmax_rel = storage_to_minmax_rel
+        self.storage_to_level_rel = storage_to_level_rel
+        self.storage_to_surface_rel = storage_to_surface_rel
 
         self.evap_rates = np.loadtxt(dam_data_directory / f"evap_{name}.txt")
         self.storage_to_minmax_rel = np.loadtxt(dam_data_directory / f"store_min_max_release_{name}.txt")

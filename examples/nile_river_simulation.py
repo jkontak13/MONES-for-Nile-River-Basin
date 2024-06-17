@@ -12,6 +12,8 @@ from core.models.catchment import Catchment
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 
+data_directory = Path(__file__).parents[1] / "examples" / "data" / "nile_river"
+
 
 def create_nile_river_env() -> WaterManagementSystem:
     # Ethiopia
@@ -22,6 +24,10 @@ def create_nile_river_env() -> WaterManagementSystem:
         integration_timestep_size=relativedelta(minutes=30),
         objective_function=Objective.no_objective,
         stored_water=15000000000.0,
+        evap_rates=np.loadtxt(data_directory / "dams" / "evap_GERD.txt"),
+        storage_to_minmax_rel=np.loadtxt(data_directory / "dams" / "store_min_max_release_GERD.txt"),
+        storage_to_level_rel=np.loadtxt(data_directory / "dams" / "store_level_rel_GERD.txt"),
+        storage_to_surface_rel=np.loadtxt(data_directory / "dams" / "store_sur_rel_GERD.txt"),
     )
     GERD_power_plant = PowerPlant(
         "GERD_power_plant",
@@ -34,7 +40,6 @@ def create_nile_river_env() -> WaterManagementSystem:
         max_capacity=6000,
         dam=GERD_dam,
     )
-    data_directory = Path(__file__).parents[1] / "core" / "data"
     # Sudan
     DSSennar_irr_system = IrrigationSystem(
         "DSSennar_irr",
@@ -73,6 +78,10 @@ def create_nile_river_env() -> WaterManagementSystem:
         integration_timestep_size=relativedelta(minutes=30),
         objective_function=Objective.no_objective,
         stored_water=4571250000.0,
+        evap_rates=np.loadtxt(data_directory / "dams" / "evap_Roseires.txt"),
+        storage_to_minmax_rel=np.loadtxt(data_directory / "dams" / "store_min_max_release_Roseires.txt"),
+        storage_to_level_rel=np.loadtxt(data_directory / "dams" / "store_level_rel_Roseires.txt"),
+        storage_to_surface_rel=np.loadtxt(data_directory / "dams" / "store_sur_rel_Roseires.txt"),
     )
     Sennar_dam = Dam(
         "Sennar",
@@ -81,6 +90,10 @@ def create_nile_river_env() -> WaterManagementSystem:
         integration_timestep_size=relativedelta(minutes=30),
         objective_function=Objective.no_objective,
         stored_water=434925000.0,
+        evap_rates=np.loadtxt(data_directory / "dams" / "evap_Sennar.txt"),
+        storage_to_minmax_rel=np.loadtxt(data_directory / "dams" / "store_min_max_release_Sennar.txt"),
+        storage_to_level_rel=np.loadtxt(data_directory / "dams" / "store_level_rel_Sennar.txt"),
+        storage_to_surface_rel=np.loadtxt(data_directory / "dams" / "store_sur_rel_Sennar.txt"),
     )
     # Egypt
     Egypt_irr_system = IrrigationSystem(
@@ -97,6 +110,10 @@ def create_nile_river_env() -> WaterManagementSystem:
         objective_function=Objective.minimum_water_level,
         objective_name="HAD_minimum_water_level",
         stored_water=137025000000.0,
+        evap_rates=np.loadtxt(data_directory / "dams" / "evap_HAD.txt"),
+        storage_to_minmax_rel=np.loadtxt(data_directory / "dams" / "store_min_max_release_HAD.txt"),
+        storage_to_level_rel=np.loadtxt(data_directory / "dams" / "store_level_rel_HAD.txt"),
+        storage_to_surface_rel=np.loadtxt(data_directory / "dams" / "store_sur_rel_HAD.txt"),
     )
     # Create 'edges' between Facilities.
     # TODO: determine max capacity for flows
