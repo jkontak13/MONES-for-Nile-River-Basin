@@ -1,11 +1,8 @@
-from pathlib import Path
 from core.models.facility import ControlledFacility
 from gymnasium.spaces import Box, Space
 import numpy as np
 from dateutil.relativedelta import relativedelta
 from numpy.core.multiarray import interp as compiled_interp
-
-dam_data_directory = Path(__file__).parents[2] / "examples" / "data" / "nile_river" / "dams"
 
 
 class Dam(ControlledFacility):
@@ -68,11 +65,6 @@ class Dam(ControlledFacility):
         self.storage_to_minmax_rel = storage_to_minmax_rel
         self.storage_to_level_rel = storage_to_level_rel
         self.storage_to_surface_rel = storage_to_surface_rel
-
-        self.evap_rates = np.loadtxt(dam_data_directory / f"evap_{name}.txt")
-        self.storage_to_minmax_rel = np.loadtxt(dam_data_directory / f"store_min_max_release_{name}.txt")
-        self.storage_to_level_rel = np.loadtxt(dam_data_directory / f"store_level_rel_{name}.txt")
-        self.storage_to_surface_rel = np.loadtxt(dam_data_directory / f"store_sur_rel_{name}.txt")
 
         self.storage_vector = []
         self.level_vector = []
