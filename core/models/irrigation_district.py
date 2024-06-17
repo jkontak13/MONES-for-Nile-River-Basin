@@ -1,20 +1,20 @@
 from core.models.facility import Facility
 
 
-class IrrigationSystem(Facility):
+class IrrigationDistrict(Facility):
     """
-    Class to represent Irrigation System
+    Class to represent Irrigation District
 
     Attributes:
     ----------
     name : str
         identifier
     demand : float
-    The list of monthly demand of the irrigation system
+    The list of monthly demand of the irrigation district
     total_deficit : float
     The total amount of water deficit we have
     list_deficits : list[float]
-    The monthly list of the deficit of the irrigation system
+    The monthly list of the deficit of the irrigation district
 
 
     Methods:
@@ -22,7 +22,7 @@ class IrrigationSystem(Facility):
     determine_reward():
         Calculates the reward (irrigation deficit) given the values of its attributes
     determine_consumption():
-        Determines how much water is consumed by the irrigation system
+        Determines how much water is consumed by the irrigation district
     determine_info():
         Returns info about the irrigation sustem
     """
@@ -43,7 +43,7 @@ class IrrigationSystem(Facility):
         Returns:
         ----------
         float
-            Water deficit of the irrigation system
+            Water deficit of the irrigation district
         """
         consumption = self.determine_consumption()
         deficit = self.get_current_demand() - consumption
@@ -65,7 +65,7 @@ class IrrigationSystem(Facility):
 
     def determine_consumption(self) -> float:
         """
-        Determines how much water is consumed by the irrigation system
+        Determines how much water is consumed by the irrigation district
 
         Returns:
         ----------
@@ -79,12 +79,12 @@ class IrrigationSystem(Facility):
 
     def determine_info(self) -> dict:
         """
-        Determines info of irrigation system
+        Determines info of irrigation district
 
         Returns:
         ----------
         dict
-            Info about irrigation system (name, name, inflow, outflow, demand, timestep, deficit)
+            Info about irrigation district (name, name, inflow, outflow, demand, timestep, deficit)
         """
         return {
             "name": self.name,

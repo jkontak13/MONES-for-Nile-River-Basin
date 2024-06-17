@@ -5,9 +5,9 @@ from dateutil.relativedelta import relativedelta
 from numpy.core.multiarray import interp as compiled_interp
 
 
-class Dam(ControlledFacility):
+class Reservoir(ControlledFacility):
     """
-    A class used to represent reservoirs/dams of the problem
+    A class used to represent reservoirs of the problem
 
     Attributes
     ----------
@@ -32,7 +32,7 @@ class Dam(ControlledFacility):
     Methods
     -------
     determine_info()
-        Return dictionary with parameters of the dam.
+        Return dictionary with parameters of the reservoir.
     storage_to_level(h=float)
         Returns the level(height) based on volume.
     level_to_storage(s=float)
@@ -113,7 +113,7 @@ class Dam(ControlledFacility):
 
             current_storage += total_addition - evaporation - release_per_second * integration_time_seconds
 
-        # Update the amount of water in the Dam
+        # Update the amount of water in the Reservoir
         self.storage_vector.append(current_storage)
         self.stored_water = current_storage
 
