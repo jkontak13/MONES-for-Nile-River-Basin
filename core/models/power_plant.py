@@ -1,5 +1,5 @@
 from core.models.facility import Facility
-from core.models.dam import Dam
+from rl4water.core.models.reservoir import Reservoir
 from scipy.constants import g
 import numpy as np
 
@@ -47,7 +47,7 @@ class PowerPlant(Facility):
         max_turbine_flow: float,
         head_start_level: float,
         max_capacity: float,
-        dam: Dam = None,
+        reservoir: Reservoir = None,
         # TODO: determine actual water usage for power plants, 0.0 for ease now
         water_usage: float = 0.0,
     ) -> None:
@@ -56,7 +56,7 @@ class PowerPlant(Facility):
         self.max_turbine_flow: float = max_turbine_flow
         self.head_start_level: float = head_start_level
         self.max_capacity: float = max_capacity
-        self.dam: Dam = dam
+        self.reservoir: Reservoir = reservoir
         self.water_usage: float = water_usage
         self.production_vector: np.ndarray = np.empty(0, dtype=np.float64)
 
@@ -94,10 +94,10 @@ class PowerPlant(Facility):
         m3_to_kg_factor: int = 1000
         w_mw_conversion: float = 1e-6
         # Turbine flow is equal to outflow, as long as it does not exceed maximum turbine flow
-        turbine_flow = min(self.dam.release_vector[-1], self.max_turbine_flow)
+        turbine_flow = min(self.reservoir.release_vector[-1], self.max_turbine_flow)
 
-        # Uses water level from dam to determine water level
-        water_level = self.dam.level_vector[-1] if self.dam.level_vector else 0
+        # Uses water level from reservoir to determine water level
+        water_level = self.reservoir.level_vector[-1] if self.reservoir.level_vector else 0
         # Calculate at what level the head will generate power, using water_level of the outflow and head_start_level
         head = max(0.0, water_level - self.head_start_level)
 

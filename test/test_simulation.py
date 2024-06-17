@@ -40,7 +40,7 @@ def test_simulation() -> None:
         _, _, _, _, final_info = water_management_system.step(action)
 
         # Skip leap years as they were not supported in the original Nile River simulation
-        if calendar.isleap(water_management_system.unwrapped.current_date):
+        if calendar.isleap(water_management_system.unwrapped.current_date.year):
             water_management_system.unwrapped.current_date += relativedelta(years=1)
 
         assert get_info_for_verification(final_info) == approx(info_to_verify, abs=0.1)

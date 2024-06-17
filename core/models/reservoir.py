@@ -1,16 +1,13 @@
-from pathlib import Path
 from core.models.facility import ControlledFacility
 from gymnasium.spaces import Box, Space
 import numpy as np
 from dateutil.relativedelta import relativedelta
 from numpy.core.multiarray import interp as compiled_interp
 
-dam_data_directory = Path(__file__).parents[1] / "data" / "dams"
 
-
-class Dam(ControlledFacility):
+class Reservoir(ControlledFacility):
     """
-    A class used to represent reservoirs/dams of the problem
+    A class used to represent reservoirs of the problem
 
     Attributes
     ----------
@@ -35,7 +32,7 @@ class Dam(ControlledFacility):
     Methods
     -------
     determine_info()
-        Return dictionary with parameters of the dam.
+        Return dictionary with parameters of the reservoir.
     storage_to_level(h=float)
         Returns the level(height) based on volume.
     level_to_storage(s=float)
@@ -53,6 +50,10 @@ class Dam(ControlledFacility):
         action_space: Box,
         objective_function,
         integration_timestep_size: relativedelta,
+        evap_rates: list[float],
+        storage_to_minmax_rel: list[list[float]],
+        storage_to_level_rel: list[list[float]],
+        storage_to_surface_rel: list[list[float]],
         objective_name: str = "",
         max_capacity: float = float("Inf"),
         stored_water: float = 0,
@@ -60,10 +61,10 @@ class Dam(ControlledFacility):
         super().__init__(name, observation_space, action_space, max_capacity)
         self.stored_water: float = stored_water
 
-        self.evap_rates = np.loadtxt(dam_data_directory / f"evap_{name}.txt")
-        self.storage_to_minmax_rel = np.loadtxt(dam_data_directory / f"store_min_max_release_{name}.txt")
-        self.storage_to_level_rel = np.loadtxt(dam_data_directory / f"store_level_rel_{name}.txt")
-        self.storage_to_surface_rel = np.loadtxt(dam_data_directory / f"store_sur_rel_{name}.txt")
+        self.evap_rates = evap_rates
+        self.storage_to_minmax_rel = storage_to_minmax_rel
+        self.storage_to_level_rel = storage_to_level_rel
+        self.storage_to_surface_rel = storage_to_surface_rel
 
         self.storage_vector = []
         self.level_vector = []
@@ -112,7 +113,7 @@ class Dam(ControlledFacility):
 
             current_storage += total_addition - evaporation - release_per_second * integration_time_seconds
 
-        # Update the amount of water in the Dam
+        # Update the amount of water in the Reservoir
         self.storage_vector.append(current_storage)
         self.stored_water = current_storage
 

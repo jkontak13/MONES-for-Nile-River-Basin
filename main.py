@@ -1,17 +1,5 @@
 import pprint
-from collections import OrderedDict
-
 import numpy as np
-from pathlib import Path
-from gymnasium import Space
-from gymnasium.spaces import Box
-from core.envs.water_management_system import WaterManagementSystem
-from core.models.dam import Dam
-from core.models.flow import Flow, Inflow
-from core.models.objective import Objective
-from core.models.power_plant import PowerPlant
-from core.models.irrigation_system import IrrigationSystem
-from core.models.catchment import Catchment
 from examples.nile_river_simulation import create_nile_river_env
 import csv
 
@@ -19,9 +7,9 @@ make_csv = True
 
 
 def nile_river_simulation(nu_of_timesteps=240):
-    # Create power plant, dam and irrigation system. Initialise with semi-random parameters.
-    # Set objective functions to identity for power plant, minimum_water_level for dam and water_deficit_minimised
-    # for irrigation system.
+    # Create power plant, reservoir and irrigation district. Initialise with semi-random parameters.
+    # Set objective functions to identity for power plant, minimum_water_level for reservoir and water_deficit_minimised
+    # for irrigation district.
 
     water_management_system = create_nile_river_env()
 
