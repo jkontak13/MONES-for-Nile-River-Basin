@@ -42,11 +42,32 @@ class Flow:
 
             return sum(source.get_outflow(timestep_after_delay_clipped) for source in self.sources)
 
-    def set_destination_inflow(self) -> None:
-        destination_inflow = self.determine_source_outflow() * (1.0 - self.evaporation_rate)
+    def determine_source_outflow_by_destination(self, destination_index: int, destination_inflow_ratio: float) -> float:
+        if self.timestep - self.delay < 0 and self.default_outflow:
+            return self.default_outflow
+        else:
+            timestep_after_delay_clipped = max(0, self.timestep - self.delay)
+            total_source_outflow = 0
 
-        for destination, destination_inflow_ratio in self.destinations.items():
-            destination.set_inflow(self.timestep, destination_inflow * destination_inflow_ratio)
+            # Calculate each source contribution to the destination
+            for source in self.sources:
+                source_outflow = source.get_outflow(timestep_after_delay_clipped)
+
+                # Determine if source has custom split policy
+                if source.split_release:
+                    total_source_outflow += source_outflow * source.split_release[destination_index]
+                else:
+                    total_source_outflow += source_outflow * destination_inflow_ratio
+
+            return total_source_outflow
+
+    def set_destination_inflow(self) -> None:
+        for destination_index, (destination, destination_inflow_ratio) in enumerate(self.destinations.items()):
+            destination_inflow = self.determine_source_outflow_by_destination(
+                destination_index, destination_inflow_ratio
+            )
+
+            destination.set_inflow(self.timestep, destination_inflow * (1.0 - self.evaporation_rate))
 
     def is_truncated(self) -> bool:
         return False
@@ -91,6 +112,14 @@ class Inflow(Flow):
             timestep_after_delay_clipped = max(0, self.timestep - self.delay) % len(self.all_inflow)
 
             return self.all_inflow[timestep_after_delay_clipped]
+
+    def determine_source_outflow_by_destination(self, destination_index: int, destination_inflow_ratio: float) -> float:
+        if self.timestep - self.delay < 0 and self.default_outflow:
+            return self.default_outflow
+        else:
+            timestep_after_delay_clipped = max(0, self.timestep - self.delay) % len(self.all_inflow)
+
+            return self.all_inflow[timestep_after_delay_clipped] * destination_inflow_ratio
 
     def is_truncated(self) -> bool:
         return self.timestep >= len(self.all_inflow)

@@ -84,9 +84,11 @@ class Reservoir(ControlledFacility):
         # Pass water level to reward function
         return self.objective_function(self.storage_to_level(self.stored_water))
 
-    def determine_outflow(self, action: float) -> float:
+    def determine_outflow(self, actions: np.array) -> list[float]:
+        total_action = np.sum(actions)
+
         current_storage = self.storage_vector[-1]
-        in_month_releases = np.empty(0, dtype=np.float64)
+        sub_releases = np.empty(0, dtype=np.float64)
         monthly_evap_total = 0
 
         final_date = self.current_date + self.timestep_size
@@ -105,9 +107,9 @@ class Reservoir(ControlledFacility):
 
             min_possible_release, max_possible_release = self.storage_to_minmax(current_storage)
 
-            release_per_second = min(max_possible_release, max(min_possible_release, action))
+            release_per_second = min(max_possible_release, max(min_possible_release, total_action))
 
-            in_month_releases = np.append(in_month_releases, release_per_second)
+            sub_releases = np.append(sub_releases, release_per_second)
 
             total_addition = self.get_inflow(self.timestep) * integration_time_seconds
 
@@ -117,14 +119,18 @@ class Reservoir(ControlledFacility):
         self.storage_vector.append(current_storage)
         self.stored_water = current_storage
 
-        # Calculate the ouflow of water
-        avg_monthly_release = np.mean(in_month_releases, dtype=np.float64)
-        self.release_vector.append(avg_monthly_release)
-
         # Record level based on storage for time t
         self.level_vector.append(self.storage_to_level(current_storage))
 
-        return avg_monthly_release
+        # Calculate the ouflow of water
+        average_release = np.mean(sub_releases, dtype=np.float64)
+        self.release_vector.append(average_release)
+
+        # Split release for different destinations
+        if self.should_split_release and total_action != 0:
+            self.split_release = [(action / total_action) for action in actions]
+
+        return average_release
 
     def determine_info(self) -> dict:
         info = {
