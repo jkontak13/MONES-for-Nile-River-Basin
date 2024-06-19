@@ -10,7 +10,7 @@ class Flow:
         self,
         name: str,
         sources: list[Union[Facility, ControlledFacility]],
-        destination: Optional[Union[Facility, ControlledFacility]],
+        destinations: Facility | ControlledFacility | dict[Facility | ControlledFacility, float],
         max_capacity: float,
         evaporation_rate: float = 0.0,
         delay: int = 0,
@@ -18,7 +18,11 @@ class Flow:
     ) -> None:
         self.name: str = name
         self.sources: list[Union[Facility, ControlledFacility]] = sources
-        self.destination: Union[Facility, ControlledFacility] = destination
+
+        if isinstance(destinations, Facility) or isinstance(destinations, ControlledFacility):
+            self.destinations = {destinations: 1.0}
+        else:
+            self.destinations: dict[Union[Facility, ControlledFacility], float] = destinations
 
         self.max_capacity: float = max_capacity
         self.evaporation_rate: float = evaporation_rate
@@ -40,7 +44,9 @@ class Flow:
 
     def set_destination_inflow(self) -> None:
         destination_inflow = self.determine_source_outflow() * (1.0 - self.evaporation_rate)
-        self.destination.set_inflow(self.timestep, destination_inflow)
+
+        for destination, destination_inflow_ratio in self.destinations.items():
+            destination.set_inflow(self.timestep, destination_inflow * destination_inflow_ratio)
 
     def is_truncated(self) -> bool:
         return False
@@ -68,14 +74,14 @@ class Inflow(Flow):
     def __init__(
         self,
         name: str,
-        destination: Union[Facility, ControlledFacility],
+        destinations: Facility | ControlledFacility | dict[Facility | ControlledFacility, float],
         max_capacity: float,
         all_inflow: list[float],
         evaporation_rate: float = 0.0,
         delay: int = 0,
         default_outflow: Optional[float] = None,
     ) -> None:
-        super().__init__(name, None, destination, max_capacity, evaporation_rate, delay, default_outflow)
+        super().__init__(name, None, destinations, max_capacity, evaporation_rate, delay, default_outflow)
         self.all_inflow: list[float] = all_inflow
 
     def determine_source_outflow(self) -> float:
