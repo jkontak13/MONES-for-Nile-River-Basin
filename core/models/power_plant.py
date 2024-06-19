@@ -1,5 +1,5 @@
 from core.models.facility import Facility
-from rl4water.core.models.reservoir import Reservoir
+from core.models.reservoir import Reservoir
 from scipy.constants import g
 import numpy as np
 

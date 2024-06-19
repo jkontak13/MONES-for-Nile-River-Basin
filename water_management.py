@@ -10,7 +10,7 @@ from torch import nn
 from core.learners.mones import MONES
 from datetime import datetime
 import uuid
-from main import create_nile_river_env
+from examples.nile_river_simulation import create_nile_river_env
 
 
 class Actor(nn.Module):

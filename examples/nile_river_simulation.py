@@ -3,11 +3,11 @@ from pathlib import Path
 from gymnasium.spaces import Box
 from gymnasium.wrappers.time_limit import TimeLimit
 from core.envs.water_management_system import WaterManagementSystem
-from rl4water.core.models.reservoir import Reservoir
+from core.models.reservoir import Reservoir
 from core.models.flow import Flow, Inflow
 from core.models.objective import Objective
 from core.models.power_plant import PowerPlant
-from rl4water.core.models.irrigation_district import IrrigationDistrict
+from core.models.irrigation_district import IrrigationDistrict
 from core.models.catchment import Catchment
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
@@ -20,7 +20,7 @@ def create_nile_river_env() -> WaterManagementSystem:
     GERD_reservoir = Reservoir(
         "GERD",
         Box(low=0, high=80000000000),
-        Box(0, 10000),
+        Box(low=0, high=10000),
         integration_timestep_size=relativedelta(minutes=30),
         objective_function=Objective.no_objective,
         stored_water=15000000000.0,
