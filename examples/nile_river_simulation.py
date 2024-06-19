@@ -9,6 +9,7 @@ from core.models.objective import Objective
 from core.models.power_plant import PowerPlant
 from core.models.irrigation_district import IrrigationDistrict
 from core.models.catchment import Catchment
+from core.wrappers.transform_action import ReshapeArrayAction
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 
@@ -230,6 +231,7 @@ def create_nile_river_env() -> WaterManagementSystem:
         seed=42,
     )
 
+    water_management_system = ReshapeArrayAction(water_management_system)
     water_management_system = TimeLimit(water_management_system, max_episode_steps=240)
 
     return water_management_system

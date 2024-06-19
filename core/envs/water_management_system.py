@@ -98,13 +98,11 @@ class WaterManagementSystem(gym.Env):
         final_truncated = False
         final_info = {"date": self.current_date}
 
-        actions_taken = 0
         for water_system in self.water_systems:
             water_system.current_date = self.current_date
 
             if isinstance(water_system, ControlledFacility):
-                observation, reward, terminated, truncated, info = water_system.step(action[actions_taken])
-                actions_taken += 1
+                observation, reward, terminated, truncated, info = water_system.step(action[water_system.name])
             elif isinstance(water_system, Facility) or isinstance(water_system, Flow):
                 observation, reward, terminated, truncated, info = water_system.step()
             else:
