@@ -32,10 +32,10 @@ def create_nile_river_env() -> WaterManagementSystem:
     )
     GERD_power_plant = PowerPlant(
         "GERD_power_plant",
-        # Objective.identity,
-        Objective.scalar_identity,
+        Objective.scalar_identity(1/1000000000),
         "ethiopia_power",
         efficiency=0.93,
+        min_turbine_flow=0,
         max_turbine_flow=4320,
         head_start_level=507,
         max_capacity=6000,
@@ -108,7 +108,7 @@ def create_nile_river_env() -> WaterManagementSystem:
         Box(low=0, high=80000000000),
         Box(0, 4000),
         integration_timestep_size=relativedelta(minutes=30),
-        objective_function=Objective.minimum_water_level,
+        objective_function=Objective.minimum_water_level(159),
         objective_name="HAD_minimum_water_level",
         stored_water=137025000000.0,
         evap_rates=np.loadtxt(data_directory / "reservoirs" / "evap_HAD.txt"),
@@ -130,7 +130,9 @@ def create_nile_river_env() -> WaterManagementSystem:
     )
     # TODO: add catchment 1 inflow to sources of Roseires (inflow with destination Roseires)
 
-    Roseires_flow = Flow("roseires_flow", [GERD_reservoir, GerdToRoseires_catchment], Roseires_reservoir, float("inf"))
+    Power_plant_flow = Flow("power_plant_flow", [GERD_reservoir], GERD_power_plant, float("inf"))
+
+    Roseires_flow = Flow("roseires_flow", [GERD_power_plant, GerdToRoseires_catchment], Roseires_reservoir, float("inf"))
 
     RoseiresToAbuNaama_catchment = Catchment(
         "RoseiresToAbuNaama_catchment", np.loadtxt(data_directory / "catchments" / "InflowRoseiresToAbuNaama.txt")
@@ -193,6 +195,7 @@ def create_nile_river_env() -> WaterManagementSystem:
         water_systems=[
             GERD_inflow,
             GERD_reservoir,
+            Power_plant_flow,
             GERD_power_plant,
             GerdToRoseires_catchment,
             Roseires_flow,

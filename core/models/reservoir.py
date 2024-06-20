@@ -89,7 +89,6 @@ class Reservoir(ControlledFacility):
 
         current_storage = self.storage_vector[-1]
         sub_releases = np.empty(0, dtype=np.float64)
-        monthly_evap_total = 0
 
         final_date = self.current_date + self.timestep_size
         timestep_seconds = (final_date - self.current_date).total_seconds()
@@ -103,7 +102,6 @@ class Reservoir(ControlledFacility):
             surface = self.storage_to_surface(current_storage)
 
             evaporation = surface * (evaporatio_rate_per_second * integration_time_seconds)
-            monthly_evap_total += evaporation
 
             min_possible_release, max_possible_release = self.storage_to_minmax(current_storage)
 

@@ -84,7 +84,7 @@ class ControlledFacility(ABC):
         action_space: ActType,
         objective_function=Objective.no_objective,
         objective_name: str = "",
-        max_capacity: float = float("Inf"),
+        max_capacity: float = float("inf"),
     ) -> None:
         self.name: str = name
         self.all_inflow: list[float] = []
