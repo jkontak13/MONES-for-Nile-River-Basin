@@ -1,3 +1,4 @@
+import numpy as np
 from abc import ABC, abstractmethod
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
@@ -19,6 +20,8 @@ class Facility(ABC):
         self.current_date: Optional[datetime] = None
         self.timestep_size: Optional[relativedelta] = None
         self.timestep: int = 0
+
+        self.split_release = None
 
     @abstractmethod
     def determine_reward(self) -> float:
@@ -42,10 +45,12 @@ class Facility(ABC):
         return self.all_inflow[timestep]
 
     def set_inflow(self, timestep: int, inflow: float) -> None:
-        if len(self.all_inflow) != timestep:
+        if len(self.all_inflow) == timestep:
+            self.all_inflow.append(inflow)
+        elif len(self.all_inflow) > timestep:
+            self.all_inflow[timestep] += inflow
+        else:
             raise IndexError
-
-        self.all_inflow.append(inflow)
 
     def determine_outflow(self) -> float:
         return self.get_inflow(self.timestep) - self.determine_consumption()
@@ -70,6 +75,12 @@ class Facility(ABC):
         self.all_inflow: list[float] = []
         self.all_outflow: list[float] = []
 
+    def __eq__(self, other):
+        return isinstance(other, self.__class__) and self.name == other.name
+
+    def __hash__(self):
+        return hash(self.name)
+
 
 class ControlledFacility(ABC):
     def __init__(
@@ -79,7 +90,7 @@ class ControlledFacility(ABC):
         action_space: ActType,
         objective_function=Objective.no_objective,
         objective_name: str = "",
-        max_capacity: float = float("Inf"),
+        max_capacity: float = float("inf"),
     ) -> None:
         self.name: str = name
         self.all_inflow: list[float] = []
@@ -96,6 +107,9 @@ class ControlledFacility(ABC):
         self.current_date: Optional[datetime] = None
         self.timestep_size: Optional[relativedelta] = None
         self.timestep: int = 0
+
+        self.should_split_release = np.prod(self.action_space.shape) > 1
+        self.split_release = None
 
     @abstractmethod
     def determine_reward(self) -> float:
@@ -124,10 +138,12 @@ class ControlledFacility(ABC):
         return self.all_inflow[timestep]
 
     def set_inflow(self, timestep: int, inflow: float) -> None:
-        if len(self.all_inflow) != timestep:
+        if len(self.all_inflow) == timestep:
+            self.all_inflow.append(inflow)
+        elif len(self.all_inflow) > timestep:
+            self.all_inflow[timestep] += inflow
+        else:
             raise IndexError
-
-        self.all_inflow.append(inflow)
 
     def get_outflow(self, timestep: int) -> float:
         return self.all_outflow[timestep]
@@ -156,3 +172,9 @@ class ControlledFacility(ABC):
         self.timestep: int = 0
         self.all_inflow: list[float] = []
         self.all_outflow: list[float] = []
+
+    def __eq__(self, other):
+        return isinstance(other, self.__class__) and self.name == other.name
+
+    def __hash__(self):
+        return hash(self.name)

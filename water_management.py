@@ -1,16 +1,13 @@
 import time
 from pprint import pprint
-
 import h5py
-import numpy as np
 import torch
 from matplotlib import pyplot as plt
 from torch import nn
-
 from core.learners.mones import MONES
 from datetime import datetime
 import uuid
-from main import create_nile_river_env
+from examples.susquehanna_river_simulation import create_susquehanna_river_env
 
 
 class Actor(nn.Module):
@@ -34,16 +31,14 @@ class Actor(nn.Module):
 
 
 def train_agent(logdir):
-    number_of_objectives = 4
+    number_of_observations = 1
     number_of_actions = 4
     agent = MONES(
-        create_nile_river_env,
-        Actor(number_of_objectives, number_of_actions, hidden=50),
+        create_susquehanna_river_env,
+        Actor(number_of_observations, number_of_actions, hidden=50),
         n_population=5,
         n_runs=2,
         logdir=logdir,
-        indicator="hypervolume",
-        ref_point=np.array([0, -94210.39, -422150.04, 0]),
     )
     timer = time.time()
     agent.train(10)
@@ -60,7 +55,7 @@ def run_agent(logdir):
     agent = checkpoint["policy"]
 
     timesteps = 12
-    env = create_nile_river_env()
+    env = create_susquehanna_river_env()
     obs, _ = env.reset(seed=2137)
     for _ in range(timesteps):
         action = agent.forward(torch.from_numpy(obs).float())

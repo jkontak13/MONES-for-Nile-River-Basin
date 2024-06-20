@@ -3,12 +3,13 @@ from pathlib import Path
 from gymnasium.spaces import Box
 from gymnasium.wrappers.time_limit import TimeLimit
 from core.envs.water_management_system import WaterManagementSystem
-from rl4water.core.models.reservoir import Reservoir
+from core.models.reservoir import Reservoir
 from core.models.flow import Flow, Inflow
 from core.models.objective import Objective
 from core.models.power_plant import PowerPlant
-from rl4water.core.models.irrigation_district import IrrigationDistrict
+from core.models.irrigation_district import IrrigationDistrict
 from core.models.catchment import Catchment
+from core.wrappers.transform_action import ReshapeArrayAction
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 
@@ -20,7 +21,7 @@ def create_nile_river_env() -> WaterManagementSystem:
     GERD_reservoir = Reservoir(
         "GERD",
         Box(low=0, high=80000000000),
-        Box(0, 10000),
+        Box(low=0, high=10000),
         integration_timestep_size=relativedelta(minutes=30),
         objective_function=Objective.no_objective,
         stored_water=15000000000.0,
@@ -31,10 +32,10 @@ def create_nile_river_env() -> WaterManagementSystem:
     )
     GERD_power_plant = PowerPlant(
         "GERD_power_plant",
-        # Objective.identity,
-        Objective.scalar_identity,
+        Objective.scalar_identity(1 / 1000000000),
         "ethiopia_power",
         efficiency=0.93,
+        min_turbine_flow=0,
         max_turbine_flow=4320,
         head_start_level=507,
         max_capacity=6000,
@@ -44,31 +45,31 @@ def create_nile_river_env() -> WaterManagementSystem:
     DSSennar_irr_system = IrrigationDistrict(
         "DSSennar_irr",
         np.loadtxt(data_directory / "irrigation" / "irr_demand_DSSennar.txt"),
-        Objective.water_deficit_minimised,
+        Objective.deficit_minimised,
         "sudan_deficit_minimised",
     )
     Gezira_irr_system = IrrigationDistrict(
         "Gezira_irr",
         np.loadtxt(data_directory / "irrigation" / "irr_demand_Gezira.txt"),
-        Objective.water_deficit_minimised,
+        Objective.deficit_minimised,
         "sudan_deficit_minimised",
     )
     Hassanab_irr_system = IrrigationDistrict(
         "Hassanab_irr",
         np.loadtxt(data_directory / "irrigation" / "irr_demand_Hassanab.txt"),
-        Objective.water_deficit_minimised,
+        Objective.deficit_minimised,
         "sudan_deficit_minimised",
     )
     Tamaniat_irr_system = IrrigationDistrict(
         "Tamaniat_irr",
         np.loadtxt(data_directory / "irrigation" / "irr_demand_Tamaniat.txt"),
-        Objective.water_deficit_minimised,
+        Objective.deficit_minimised,
         "sudan_deficit_minimised",
     )
     USSennar_irr_system = IrrigationDistrict(
         "USSennar_irr",
         np.loadtxt(data_directory / "irrigation" / "irr_demand_USSennar.txt"),
-        Objective.water_deficit_minimised,
+        Objective.deficit_minimised,
         "sudan_deficit_minimised",
     )
     Roseires_reservoir = Reservoir(
@@ -99,7 +100,7 @@ def create_nile_river_env() -> WaterManagementSystem:
     Egypt_irr_system = IrrigationDistrict(
         "Egypt_irr",
         np.loadtxt(data_directory / "irrigation" / "irr_demand_Egypt.txt"),
-        Objective.water_deficit_minimised,
+        Objective.deficit_minimised,
         "egypt_deficit_minimised",
     )
     HAD_reservoir = Reservoir(
@@ -107,7 +108,7 @@ def create_nile_river_env() -> WaterManagementSystem:
         Box(low=0, high=80000000000),
         Box(0, 4000),
         integration_timestep_size=relativedelta(minutes=30),
-        objective_function=Objective.minimum_water_level,
+        objective_function=Objective.is_greater_than_minimum(159),
         objective_name="HAD_minimum_water_level",
         stored_water=137025000000.0,
         evap_rates=np.loadtxt(data_directory / "reservoirs" / "evap_HAD.txt"),
@@ -129,7 +130,11 @@ def create_nile_river_env() -> WaterManagementSystem:
     )
     # TODO: add catchment 1 inflow to sources of Roseires (inflow with destination Roseires)
 
-    Roseires_flow = Flow("roseires_flow", [GERD_reservoir, GerdToRoseires_catchment], Roseires_reservoir, float("inf"))
+    Power_plant_flow = Flow("power_plant_flow", [GERD_reservoir], GERD_power_plant, float("inf"))
+
+    Roseires_flow = Flow(
+        "roseires_flow", [GERD_power_plant, GerdToRoseires_catchment], Roseires_reservoir, float("inf")
+    )
 
     RoseiresToAbuNaama_catchment = Catchment(
         "RoseiresToAbuNaama_catchment", np.loadtxt(data_directory / "catchments" / "InflowRoseiresToAbuNaama.txt")
@@ -192,6 +197,7 @@ def create_nile_river_env() -> WaterManagementSystem:
         water_systems=[
             GERD_inflow,
             GERD_reservoir,
+            Power_plant_flow,
             GERD_power_plant,
             GerdToRoseires_catchment,
             Roseires_flow,
@@ -230,6 +236,7 @@ def create_nile_river_env() -> WaterManagementSystem:
         seed=42,
     )
 
+    water_management_system = ReshapeArrayAction(water_management_system)
     water_management_system = TimeLimit(water_management_system, max_episode_steps=240)
 
     return water_management_system

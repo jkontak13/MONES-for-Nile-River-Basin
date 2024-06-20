@@ -1,5 +1,5 @@
 from core.models.facility import Facility
-from rl4water.core.models.reservoir import Reservoir
+from core.models.reservoir import Reservoir
 from scipy.constants import g
 import numpy as np
 
@@ -44,42 +44,25 @@ class PowerPlant(Facility):
         objective_function,
         objective_name: str,
         efficiency: float,
+        min_turbine_flow: float,
         max_turbine_flow: float,
         head_start_level: float,
         max_capacity: float,
         reservoir: Reservoir = None,
-        # TODO: determine actual water usage for power plants, 0.0 for ease now
         water_usage: float = 0.0,
     ) -> None:
         super().__init__(name, objective_function, objective_name)
         self.efficiency: float = efficiency
         self.max_turbine_flow: float = max_turbine_flow
         self.head_start_level: float = head_start_level
+        self.min_turbine_flow: float = min_turbine_flow
         self.max_capacity: float = max_capacity
         self.reservoir: Reservoir = reservoir
         self.water_usage: float = water_usage
         self.production_vector: np.ndarray = np.empty(0, dtype=np.float64)
 
-        self.nu_of_days_per_month: list[int] = [
-            31,  # January
-            28,  # February (non-leap year)
-            31,  # March
-            30,  # April
-            31,  # May
-            30,  # June
-            31,  # July
-            31,  # August
-            30,  # September
-            31,  # October
-            30,  # November
-            31,  # December
-        ]
-
-    def get_inflow(self, timestep: int) -> float:
-        return 0.0
-
-    def get_outflow(self, timestep: int) -> float:
-        return 0.0
+    def determine_turbine_flow(self) -> float:
+        return max(self.min_turbine_flow, min(self.max_turbine_flow, self.get_inflow(self.timestep)))
 
     # Constants are configured as parameters with default values
     def determine_production(self) -> float:
@@ -89,12 +72,12 @@ class PowerPlant(Facility):
         Returns:
         ----------
         float
-            Plant's power production in mWh
+            Plant's power production in MWh
         """
         m3_to_kg_factor: int = 1000
-        w_mw_conversion: float = 1e-6
+        w_Mw_conversion: float = 1e-6
         # Turbine flow is equal to outflow, as long as it does not exceed maximum turbine flow
-        turbine_flow = min(self.reservoir.release_vector[-1], self.max_turbine_flow)
+        turbine_flow = self.determine_turbine_flow()
 
         # Uses water level from reservoir to determine water level
         water_level = self.reservoir.level_vector[-1] if self.reservoir.level_vector else 0
@@ -104,15 +87,15 @@ class PowerPlant(Facility):
         # Calculate power in mW, has to be lower than or equal to capacity
         power_in_mw = min(
             self.max_capacity,
-            turbine_flow * head * m3_to_kg_factor * g * self.efficiency * w_mw_conversion,
+            turbine_flow * head * m3_to_kg_factor * g * self.efficiency * w_Mw_conversion,
         )
 
-        nu_days = self.nu_of_days_per_month[self.determine_month()]
-        total_hours = nu_days * 24
+        # Calculate the numbe rof hours the power plant has been running.
+        final_date = self.current_date + self.timestep_size
+        timestep_hours = (final_date - self.current_date).total_seconds() / 3600
 
         # Hydro-energy power production in mWh
-        production = power_in_mw * total_hours
-
+        production = power_in_mw * timestep_hours
         self.production_vector = np.append(self.production_vector, production)
 
         return production
@@ -142,7 +125,7 @@ class PowerPlant(Facility):
         float
             How much water is consumed
         """
-        return self.get_inflow(self.timestep) * self.water_usage
+        return self.determine_turbine_flow() * self.water_usage
 
     def determine_info(self) -> dict:
         """
