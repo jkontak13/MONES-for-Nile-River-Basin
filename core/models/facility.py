@@ -75,6 +75,12 @@ class Facility(ABC):
         self.all_inflow: list[float] = []
         self.all_outflow: list[float] = []
 
+    def __eq__(self, other):
+        return isinstance(other, self.__class__) and self.name == other.name
+
+    def __hash__(self):
+        return hash(self.name)
+
 
 class ControlledFacility(ABC):
     def __init__(
@@ -166,3 +172,9 @@ class ControlledFacility(ABC):
         self.timestep: int = 0
         self.all_inflow: list[float] = []
         self.all_outflow: list[float] = []
+
+    def __eq__(self, other):
+        return isinstance(other, self.__class__) and self.name == other.name
+
+    def __hash__(self):
+        return hash(self.name)
