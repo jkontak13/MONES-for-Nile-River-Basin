@@ -55,7 +55,7 @@ class Reservoir(ControlledFacility):
         storage_to_level_rel: list[list[float]],
         storage_to_surface_rel: list[list[float]],
         objective_name: str = "",
-        max_capacity: float = float("Inf"),
+        max_capacity: float = float("inf"),
         stored_water: float = 0,
     ) -> None:
         super().__init__(name, observation_space, action_space, max_capacity)
