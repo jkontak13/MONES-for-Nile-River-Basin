@@ -26,14 +26,9 @@ class ReshapeArrayAction(gym.ActionWrapper, gym.utils.RecordConstructorArgs):
         gym.ActionWrapper.__init__(self, env)
 
     def action(self, action):
-        print("Initial action: ", action)
-        print("Initial action type: ", type(action))
         reshaped_actions = {}
 
         for name, sub_action_space_shape in self.ordered_shapes.items():
             reshaped_actions[name] = np.reshape(action[self.slices[name]], sub_action_space_shape)
-
-        print("Reshaped action: ", reshaped_actions)
-        print("Reshaped action type: ", type(reshaped_actions))
 
         return reshaped_actions
