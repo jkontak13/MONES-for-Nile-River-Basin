@@ -32,7 +32,7 @@ def create_nile_river_env() -> WaterManagementSystem:
     )
     GERD_power_plant = PowerPlant(
         "GERD_power_plant",
-        Objective.scalar_identity(1/1000000000),
+        Objective.scalar_identity(1 / 1000000000),
         "ethiopia_power",
         efficiency=0.93,
         min_turbine_flow=0,
@@ -45,31 +45,31 @@ def create_nile_river_env() -> WaterManagementSystem:
     DSSennar_irr_system = IrrigationDistrict(
         "DSSennar_irr",
         np.loadtxt(data_directory / "irrigation" / "irr_demand_DSSennar.txt"),
-        Objective.water_deficit_minimised,
+        Objective.deficit_minimised,
         "sudan_deficit_minimised",
     )
     Gezira_irr_system = IrrigationDistrict(
         "Gezira_irr",
         np.loadtxt(data_directory / "irrigation" / "irr_demand_Gezira.txt"),
-        Objective.water_deficit_minimised,
+        Objective.deficit_minimised,
         "sudan_deficit_minimised",
     )
     Hassanab_irr_system = IrrigationDistrict(
         "Hassanab_irr",
         np.loadtxt(data_directory / "irrigation" / "irr_demand_Hassanab.txt"),
-        Objective.water_deficit_minimised,
+        Objective.deficit_minimised,
         "sudan_deficit_minimised",
     )
     Tamaniat_irr_system = IrrigationDistrict(
         "Tamaniat_irr",
         np.loadtxt(data_directory / "irrigation" / "irr_demand_Tamaniat.txt"),
-        Objective.water_deficit_minimised,
+        Objective.deficit_minimised,
         "sudan_deficit_minimised",
     )
     USSennar_irr_system = IrrigationDistrict(
         "USSennar_irr",
         np.loadtxt(data_directory / "irrigation" / "irr_demand_USSennar.txt"),
-        Objective.water_deficit_minimised,
+        Objective.deficit_minimised,
         "sudan_deficit_minimised",
     )
     Roseires_reservoir = Reservoir(
@@ -100,7 +100,7 @@ def create_nile_river_env() -> WaterManagementSystem:
     Egypt_irr_system = IrrigationDistrict(
         "Egypt_irr",
         np.loadtxt(data_directory / "irrigation" / "irr_demand_Egypt.txt"),
-        Objective.water_deficit_minimised,
+        Objective.deficit_minimised,
         "egypt_deficit_minimised",
     )
     HAD_reservoir = Reservoir(
@@ -108,7 +108,7 @@ def create_nile_river_env() -> WaterManagementSystem:
         Box(low=0, high=80000000000),
         Box(0, 4000),
         integration_timestep_size=relativedelta(minutes=30),
-        objective_function=Objective.minimum_water_level(159),
+        objective_function=Objective.is_greater_than_minimum(159),
         objective_name="HAD_minimum_water_level",
         stored_water=137025000000.0,
         evap_rates=np.loadtxt(data_directory / "reservoirs" / "evap_HAD.txt"),
@@ -132,7 +132,9 @@ def create_nile_river_env() -> WaterManagementSystem:
 
     Power_plant_flow = Flow("power_plant_flow", [GERD_reservoir], GERD_power_plant, float("inf"))
 
-    Roseires_flow = Flow("roseires_flow", [GERD_power_plant, GerdToRoseires_catchment], Roseires_reservoir, float("inf"))
+    Roseires_flow = Flow(
+        "roseires_flow", [GERD_power_plant, GerdToRoseires_catchment], Roseires_reservoir, float("inf")
+    )
 
     RoseiresToAbuNaama_catchment = Catchment(
         "RoseiresToAbuNaama_catchment", np.loadtxt(data_directory / "catchments" / "InflowRoseiresToAbuNaama.txt")
