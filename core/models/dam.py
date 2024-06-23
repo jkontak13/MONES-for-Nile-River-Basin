@@ -133,8 +133,10 @@ class Dam(ControlledFacility):
             "name": self.name,
             "stored_water": self.stored_water,
             "current_level": self.level_vector[-1] if self.level_vector else None,
-            "current_release": self.release_vector[-1] if self.release_vector else None,
-            "evaporation_rates": self.evap_rates.tolist(),
+            # "current_release": self.release_vector[-1] if self.release_vector else None,
+            # "evaporation_rates": self.evap_rates.tolist(),
+            "outflow": self.outflow,
+            "level_vector": self.level_vector,
         }
         return info
 

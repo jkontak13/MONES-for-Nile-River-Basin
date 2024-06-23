@@ -21,7 +21,7 @@ def set_parameters(model, z):
         s += n_p
 
 
-def run_episode(env, model):
+def run_episode(env, model, debug=False):
     e_r = 0
     done = False
     o, _ = env.reset()
@@ -30,11 +30,22 @@ def run_episode(env, model):
         with torch.no_grad():
             action = model(torch.from_numpy(o).float()[:, None])
             action = action.detach().numpy().flatten()
-        n_o, r, terminated, truncated, _ = env.step(action)
+        n_o, r, terminated, truncated, info = env.step(action)
+        # print(info)
+        if debug:
+            # print("Action:", action)
+            # print("Reward:", r)
+            # print("Observation:", n_o)
+            debug = True
         e_r += r
         o = n_o
         if terminated or truncated:
             done = True
+            if debug:
+                print("GERD levels:", last_info["GERD"]["level_vector"])
+                print("Final reward:", e_r)
+        if debug:
+            last_info = info
     return torch.from_numpy(e_r).float()
 
 
@@ -74,24 +85,31 @@ def indicator_non_dominated(points):
 
 def evaluate_individual(make_env, individual, n_runs, n_objectives):
     env = make_env()
-
+    print("Evaluating population")
     p_return = torch.zeros(n_runs, n_objectives)
     for r in range(n_runs):
         p_return[r] = run_episode(env, individual)
     return torch.mean(p_return, dim=0)
 
 
-def evaluate_population_parallel(make_env, population, n_runs, n_objectives):
+def evaluate_population_parallel(make_env, population, n_runs, n_objectives, timeout=600):
     returns = torch.zeros(len(population), n_objectives)
 
     with concurrent.futures.ProcessPoolExecutor() as executor:
         futures = []
+        print("Adding jobs")
         for i, individual in enumerate(population):
             futures.append(executor.submit(evaluate_individual, make_env, individual, n_runs, n_objectives))
 
-        for i, future in enumerate(concurrent.futures.as_completed(futures)):
-            returns[i] = future.result()
+        for i, future in enumerate(concurrent.futures.as_completed(futures, timeout=timeout)):
+            try:
+                returns[i] = future.result()
+            except concurrent.futures.TimeoutError:
+                print(f"Job for individual {i} timed out")
+            except Exception as e:
+                print(f"Error getting result for individual {i}: {e}")
 
+    print("Finished population evaluation")
     return returns
 
 
@@ -137,6 +155,8 @@ class MONES(object):
         self.logger.put("params/n_runs", n_runs, 0, "scalar")
         self.logger.put("params/parallel", parallel, 0, "scalar")
 
+        print("Logged all params.")
+
     def start(self):
         # make distribution
         n_params = n_parameters(self.policy)
@@ -154,6 +174,7 @@ class MONES(object):
         eval_time = time.time()
         # run population on multiple cores
         if self.parallel:
+            print("Starting parallel evaluation")
             returns = evaluate_population_parallel(self.make_env, population, self.n_runs, self.n_objectives)
         else:
             returns = self.evaluate_population(self.make_env(), population)
@@ -202,6 +223,7 @@ class MONES(object):
         for i in range(iterations):
             print(f"Started epoch number: {i}")
             info = self.step()
+            print("Finished step")
             returns = info["returns"]
             # logging
             self.logger.put("train/metric", info["metric"], i, "scalar")
@@ -228,12 +250,12 @@ class MONES(object):
             z.append(z_i)
         return population, torch.stack(z)
 
-    def evaluate_population(self, env, population):
+    def evaluate_population(self, env, population, debug=False):
         returns = torch.zeros(len(population), self.n_objectives)
         for i in range(len(population)):
             print(f"Population \t {i+1}/{len(population)}")
             p_return = torch.zeros(self.n_runs, self.n_objectives)
             for r in range(self.n_runs):
-                p_return[r] = run_episode(env, population[i])
+                p_return[r] = run_episode(env, population[i], debug)
             returns[i] = torch.mean(p_return, dim=0)
         return returns

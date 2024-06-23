@@ -37,22 +37,36 @@ class Logger(object):
         atexit.register(self.flush)
         self._write_thread.start()
 
-    def wait_and_write(self, wait=30):
+    def wait_and_write(self, wait=90):
         while True:
             time.sleep(wait)
             with self._lock:
                 self.flush()
 
+    # def flush(self):
+    #     for tag, type_ in self.types.items():
+    #         # if no logdir, don't log
+    #         if self.logdir is None:
+    #             self.to_log[tag] = []
+    #         # if empty skip
+    #         if not self.to_log[tag]:
+    #             continue
+    #         # only open/close during writing
+    #         with h5py.File(self.logdir / "log.h5", "r+") as f:
+    #             if type_ == "scalar":
+    #                 self.log_scalar(tag, f)
+    #             else:
+    #                 self.log_ndarray(tag, f)
+
     def flush(self):
-        for tag, type_ in self.types.items():
-            # if no logdir, don't log
-            if self.logdir is None:
-                self.to_log[tag] = []
-            # if empty skip
-            if not self.to_log[tag]:
-                continue
-            # only open/close during writing
-            with h5py.File(self.logdir / "log.h5", "r+") as f:
+        if not self.logdir:
+            self.to_log = {k: [] for k in self.to_log}
+            return
+
+        with h5py.File(self.logdir / "log.h5", "r+") as f:
+            for tag, type_ in self.types.items():
+                if not self.to_log[tag]:
+                    continue
                 if type_ == "scalar":
                     self.log_scalar(tag, f)
                 else:
@@ -62,7 +76,7 @@ class Logger(object):
         if type_ == "image":
             value = resize_image(value)
         with self._lock:
-            if not tag in self.to_log:
+            if tag not in self.to_log:
                 self.types[tag] = type_
                 self.to_log[tag] = []
             self.to_log[tag].append((step, value))
