@@ -125,6 +125,7 @@ class PowerPlant(Facility):
         float
             Reward.
         """
+        # print("Produced", self.determine_production(), "power from", self.dam.release_vector[-1])
         return self.objective_function(self.determine_production())
 
     def determine_consumption(self) -> float:
